@@ -95,6 +95,20 @@ body {
   filter: drop-shadow(0 0 1px #fff);
 }
 
+.tile-brush-preview {
+  position: absolute;
+  z-index: 12;
+  display: none;
+  width: 32px;
+  height: 32px;
+  background-repeat: no-repeat;
+  box-shadow: inset 0 0 0 2px #fff, 0 0 0 1px #173d1f;
+  opacity: 0.62;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+}
+
 .house-scene {
   position: absolute;
   inset: 0;
@@ -927,7 +941,8 @@ body.house-route .house-scene {
   }
 
   .map-editor,
-  .building-preview {
+  .building-preview,
+  .tile-brush-preview {
     display: none !important;
   }
 

@@ -98,7 +98,7 @@ const DEFAULT_MAP = {
       defaultTile: { sheet: "outdoors-spring", x: 32, y: 208 },
       tiles: {},
       blocked: [],
-      buildings: [{ id: "default-cabin-01", asset: "cabin-01", x: 32, y: 32 }],
+      buildings: [{ id: "default-cabin-01", asset: "cabin-01", x: TILE_SIZE, y: TILE_SIZE }],
     },
     house: { defaultTile: null, tiles: {}, blocked: [], buildings: [] },
   },
@@ -171,6 +171,7 @@ let activeMapId = initialMapEntry.id;
 let mapState = initialMapEntry.data;
 let selectedMapTile = null;
 let buildingPlacement = null;
+let tileBrush = null;
 let suppressNextTileClick = false;
 let currentScene = "outdoor";
 
@@ -721,6 +722,7 @@ function spawnPlayerOutsideDoor() {
 
 function showScene(scene, { pushRoute = true } = {}) {
   cancelBuildingPlacement();
+  cancelTileBrush();
   selectedMapTile = null;
   mapEditor.classList.remove("is-open");
   currentScene = scene;
@@ -769,12 +771,64 @@ function selectMapTile(scene, x, y) {
   renderPlacedBuildingList(scene);
 }
 
-function applySelectedMapTile(tileDefinition) {
-  if (!selectedMapTile) return;
-  const key = `${selectedMapTile.x},${selectedMapTile.y}`;
-  sceneMap(selectedMapTile.scene).tiles[key] = tileDefinition;
+function cancelTileBrush() {
+  tileBrush?.preview.remove();
+  tileBrush = null;
+}
+
+function beginTileBrush(tileDefinition) {
+  cancelBuildingPlacement();
+  cancelTileBrush();
+  const preview = document.createElement("div");
+  preview.className = "tile-brush-preview";
+  applyTileStyle(preview, tileDefinition);
+  const container = currentScene === "house" ? houseRoom : game;
+  container.append(preview);
+  tileBrush = {
+    tile: tileDefinition,
+    preview,
+    scene: currentScene,
+    painting: false,
+    lastKey: null,
+    position: null,
+  };
+}
+
+function brushPositionFromPointer(event) {
+  if (!tileBrush || tileBrush.scene !== currentScene) return null;
+  const container = currentScene === "house" ? houseRoom : game;
+  const rect = container.getBoundingClientRect();
+  const offsetX = currentScene === "outdoor" ? camera.x : 0;
+  const offsetY = currentScene === "outdoor" ? camera.y : 0;
+  const worldX = event.clientX - rect.left + offsetX;
+  const worldY = event.clientY - rect.top + offsetY;
+  const x = Math.floor(worldX / TILE_SIZE);
+  const y = Math.floor(worldY / TILE_SIZE);
+  const { columns, rows } = mapDimensions(currentScene);
+  if (x < 0 || y < 0 || x >= columns || y >= rows) return null;
+  return { x, y, offsetX, offsetY };
+}
+
+function updateTileBrushPreview(event) {
+  if (!tileBrush) return;
+  const position = brushPositionFromPointer(event);
+  tileBrush.position = position;
+  tileBrush.preview.style.display = position ? "block" : "none";
+  if (!position) return;
+  tileBrush.preview.style.left = `${position.x * TILE_SIZE - position.offsetX}px`;
+  tileBrush.preview.style.top = `${position.y * TILE_SIZE - position.offsetY}px`;
+}
+
+function paintWithTileBrush(position = tileBrush?.position) {
+  if (!tileBrush || !position) return;
+  const key = `${position.x},${position.y}`;
+  if (tileBrush.lastKey === key) return;
+  tileBrush.lastKey = key;
+  sceneMap(tileBrush.scene).tiles[key] = { ...tileBrush.tile };
+  const layer = tileBrush.scene === "house" ? houseMapLayer : outdoorMapLayer;
+  const cell = layer.querySelector(`[data-x="${position.x}"][data-y="${position.y}"]`);
+  if (cell) applyTileStyle(cell, tileBrush.tile);
   persistMap();
-  renderMapLayer(selectedMapTile.scene);
 }
 
 function buildTilesetPicker(details) {
@@ -804,7 +858,7 @@ function buildTilesetPicker(details) {
     selection.style.display = "block";
     selection.style.left = `${sourceX * PICKER_SCALE}px`;
     selection.style.top = `${sourceY * PICKER_SCALE}px`;
-    applySelectedMapTile({ sheet: sheetId, x: sourceX, y: sourceY });
+    beginTileBrush({ sheet: sheetId, x: sourceX, y: sourceY });
   });
 
   details.dataset.ready = "true";
@@ -820,6 +874,7 @@ function cancelBuildingPlacement() {
 
 function beginBuildingPlacement(asset, button) {
   cancelBuildingPlacement();
+  cancelTileBrush();
   const preview = document.createElement("img");
   preview.className = "building-preview";
   preview.src = asset.file;
@@ -1005,9 +1060,10 @@ function attemptInteraction() {
 }
 
 window.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && buildingPlacement) {
+  if (event.key === "Escape" && (buildingPlacement || tileBrush)) {
     event.preventDefault();
     cancelBuildingPlacement();
+    cancelTileBrush();
     return;
   }
 
@@ -1154,7 +1210,7 @@ interactButton.addEventListener("contextmenu", (event) => event.preventDefault()
       return;
     }
     const tile = event.target.closest(".tile-coordinate");
-    if (!tile || buildingPlacement) return;
+    if (!tile || buildingPlacement || tileBrush) return;
     selectMapTile(tile.dataset.scene, Number(tile.dataset.x), Number(tile.dataset.y));
   });
 });
@@ -1174,6 +1230,7 @@ toggleTileBlock.addEventListener("click", () => {
 document.querySelector("#close-map-editor").addEventListener("click", () => {
   mapEditor.classList.remove("is-open");
   cancelBuildingPlacement();
+  cancelTileBrush();
 });
 
 document.querySelectorAll(".editor-tab").forEach((tab) => {
@@ -1189,6 +1246,7 @@ document.querySelectorAll(".editor-tab").forEach((tab) => {
     });
     if (target === "buildings") renderPlacedBuildingList(currentScene);
     if (target === "maps") renderMapLibrary();
+    if (target !== "tiles") cancelTileBrush();
   });
 });
 
@@ -1200,14 +1258,31 @@ document.querySelectorAll("#tileset-accordions details").forEach((details) => {
   });
 });
 
-game.addEventListener("pointermove", updateBuildingPreview);
+game.addEventListener("pointermove", (event) => {
+  updateBuildingPreview(event);
+  updateTileBrushPreview(event);
+  if (tileBrush?.painting) paintWithTileBrush();
+});
 game.addEventListener(
   "pointerdown",
   (event) => {
-    if (!buildingPlacement || !editorEnabled()) return;
+    if (!editorEnabled()) return;
     if (event.target.closest(".outfit-picker")) return;
-    updateBuildingPreview(event);
-    if (confirmBuildingPlacement()) {
+    if (buildingPlacement) {
+      updateBuildingPreview(event);
+      if (!confirmBuildingPlacement()) return;
+      suppressNextTileClick = true;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    if (tileBrush) {
+      updateTileBrushPreview(event);
+      if (!tileBrush.position) return;
+      tileBrush.painting = true;
+      tileBrush.lastKey = null;
+      paintWithTileBrush();
+      game.setPointerCapture(event.pointerId);
       suppressNextTileClick = true;
       event.preventDefault();
       event.stopPropagation();
@@ -1215,6 +1290,18 @@ game.addEventListener(
   },
   true,
 );
+
+const finishTileBrushStroke = () => {
+  if (!tileBrush) return;
+  tileBrush.painting = false;
+  tileBrush.lastKey = null;
+};
+game.addEventListener("pointerup", finishTileBrushStroke);
+game.addEventListener("pointercancel", finishTileBrushStroke);
+game.addEventListener("lostpointercapture", finishTileBrushStroke);
+game.addEventListener("pointerleave", () => {
+  if (tileBrush && !tileBrush.painting) tileBrush.preview.style.display = "none";
+});
 
 window.addEventListener("resize", () => {
   buildTileGrid();

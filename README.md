@@ -72,6 +72,7 @@ No celular, a grade de edição fica visualmente oculta para não desenhar borda
 ## Editor de mapas
 
 - Clique em um tile para selecioná-lo e trocar sua textura pelas bibliotecas disponíveis.
+- Ao escolher um tile da biblioteca, ele vira um pincel com prévia encaixada na grade; clique e arraste para pintar continuamente o mapa.
 - Use o botão de bloqueio para permitir ou impedir a passagem do jogador.
 - Na aba **Construções**, escolha um objeto e clique no mapa para posicioná-lo com encaixe na grade.
 - Construções ficam em uma segunda camada, independente do piso. O botão **Remover** apaga apenas a construção e revela o tile original que já estava embaixo.
