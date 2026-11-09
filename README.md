@@ -47,7 +47,7 @@ O projeto bloqueia rolagem, overscroll, zoom por pinça, duplo toque, roda do mo
 
 A tela exibe uma grade de tiles de 32×32 px sobre o terreno. Cada tile possui contorno vermelho interno e mostra sua coordenada no formato `x,y`, começando por `0,0` no canto superior esquerdo.
 
-Cada mapa externo possui limite fixo de **100×75 tiles** (3200×2400 px). A câmera acompanha o jogador e o mantém no centro da tela durante o movimento, respeitando as bordas do mundo.
+Cada mapa externo possui limite fixo de **65×30 tiles**. No desktop, isso equivale a 2080×960 px; no celular, a grade usa tiles de 16 px e ocupa 1040×480 px. A câmera acompanha o jogador e o mantém no centro da tela durante o movimento, respeitando as bordas do mundo.
 
 ## Construções posicionadas
 

@@ -295,27 +295,6 @@ body.house-route .house-scene {
   pointer-events: none;
 }
 
-.help {
-  position: absolute;
-  left: 20px;
-  bottom: 20px;
-  display: grid;
-  gap: 3px;
-  padding: 10px 14px;
-  color: #65412d;
-  background: #fff8dc;
-  border: 3px solid #d6a85f;
-  border-radius: 6px;
-  box-shadow: 0 4px 0 #9b6a38;
-  font-size: 13px;
-  pointer-events: none;
-  z-index: 4;
-}
-
-.help strong {
-  font-size: 14px;
-}
-
 .outfit-picker {
   position: absolute;
   left: 50%;
@@ -781,16 +760,6 @@ body.house-route .house-scene {
 }
 
 @media (max-width: 520px) {
-  #player {
-    width: 48px;
-    height: 96px;
-  }
-
-  .help {
-    left: 12px;
-    bottom: 12px;
-  }
-
   .outfit-picker {
     bottom: 14px;
   }
@@ -811,6 +780,111 @@ body.house-route .house-scene {
   #game {
     width: 100vw;
     height: 50dvh;
+    background-size: 16px 16px;
+  }
+
+  .map-tile-cell,
+  .tile-coordinate,
+  .house-tile-grid .tile-coordinate {
+    width: 16px;
+    height: 16px;
+  }
+
+  .tile-coordinate {
+    font-size: 3px;
+  }
+
+  .tile-coordinate.is-selected {
+    box-shadow: inset 0 0 0 1px #28ff63;
+  }
+
+  .tile-coordinate.is-blocked::after {
+    right: 1px;
+    bottom: 1px;
+    padding: 1px;
+    border-radius: 1px;
+    font-size: 5px;
+  }
+
+  .tile-coordinate span {
+    top: 1px;
+    left: 1px;
+    padding: 1px;
+  }
+
+  #player {
+    width: 16px;
+    height: 32px;
+    filter: drop-shadow(0 2px 0 rgb(0 0 0 / 14%));
+  }
+
+  .house-room {
+    width: 128px;
+    height: 96px;
+    border-width: 1px;
+    box-shadow:
+      inset 0 0 0 3px #8b4c27,
+      0 0 0 1px #000;
+  }
+
+  .house-room::before {
+    height: 16px;
+    background:
+      linear-gradient(#3b2019 0 3px, transparent 3px),
+      repeating-linear-gradient(90deg, #7e3f22 0 8px, #4a2418 8px 9px, #9d5830 9px 16px);
+    box-shadow: inset 0 -2px 0 #2f1712;
+  }
+
+  .house-room::after {
+    inset: 16px 0 0;
+    border-right-width: 16px;
+    border-bottom-width: 16px;
+    border-left-width: 16px;
+    box-shadow:
+      inset 2px 0 0 #8b4c27,
+      inset -2px 0 0 #3a1c15,
+      inset 0 -2px 0 #321812;
+  }
+
+  .house-floor {
+    inset: 16px;
+    background-size: 16px 8px, 16px 8px;
+    box-shadow: inset 0 0 0 1px #78401f;
+  }
+
+  .house-furniture {
+    background-size: 192px 352px;
+  }
+
+  .house-tv {
+    top: 18px;
+    left: 18px;
+    width: 36px;
+    height: 36px;
+    background-position: -72px -84px;
+  }
+
+  .house-bed {
+    top: 18px;
+    right: 18px;
+    width: 36px;
+    height: 48px;
+    background-position: -96px -12px;
+  }
+
+  .house-exit {
+    left: 56px;
+    width: 16px;
+    height: 16px;
+    padding-bottom: 2px;
+    background: linear-gradient(90deg, #3a1913 0 2px, #9a4f27 2px 14px, #3a1913 14px);
+    font-size: 3px;
+    box-shadow: inset 0 2px 0 #2b120e;
+  }
+
+  .house-tile-grid {
+    grid-template-columns: repeat(8, 16px);
+    grid-template-rows: repeat(6, 16px);
   }
 
   .map-editor,
@@ -835,10 +909,6 @@ body.house-route .house-scene {
     overflow: hidden;
     background: #000;
     touch-action: none;
-  }
-
-  .help {
-    display: none;
   }
 
   .outfit-picker {

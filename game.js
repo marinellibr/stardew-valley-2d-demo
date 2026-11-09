@@ -23,12 +23,13 @@ spriteSheet.src = "assets/alex-sprites.png";
 const FRAME_WIDTH = 16;
 const FRAME_HEIGHT = 32;
 const FRAMES_PER_DIRECTION = 4;
-const TILE_SIZE = 32;
+const MOBILE_GAME = window.matchMedia("(max-width: 768px)").matches;
+const TILE_SIZE = MOBILE_GAME ? 16 : 32;
 const STORAGE_KEY = "stardew-map-editor-v1";
-const SHEET_SCALE = 2;
+const SHEET_SCALE = MOBILE_GAME ? 1 : 2;
 const PICKER_SCALE = 2;
-const DEFAULT_MAP_COLUMNS = 100;
-const DEFAULT_MAP_ROWS = 75;
+const DEFAULT_MAP_COLUMNS = 65;
+const DEFAULT_MAP_ROWS = 30;
 
 const SHEETS = {
   "outdoors-spring": { file: "assets/tilesets/outdoors-spring.png", width: 656, height: 1664 },
@@ -130,7 +131,7 @@ function migrateSingleMap(parsed) {
     parsed.tileSize = TILE_SIZE;
     parsed.version = 4;
   }
-  parsed.dimensions ??= { columns: DEFAULT_MAP_COLUMNS, rows: DEFAULT_MAP_ROWS };
+  parsed.dimensions = { columns: DEFAULT_MAP_COLUMNS, rows: DEFAULT_MAP_ROWS };
   return parsed;
 }
 
@@ -190,7 +191,7 @@ const keys = new Set();
 const player = {
   x: 0,
   y: 0,
-  speed: 116,
+  speed: MOBILE_GAME ? 58 : 116,
   direction: "down",
   moving: false,
   frame: 0,

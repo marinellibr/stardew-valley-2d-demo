@@ -8,7 +8,7 @@
       "data": {
         "version": 4,
         "tileSize": 32,
-        "dimensions": { "columns": 100, "rows": 75 },
+        "dimensions": { "columns": 65, "rows": 30 },
         "maps": {
           "outdoor": {
             "defaultTile": { "sheet": "outdoors-spring", "x": 32, "y": 208 },
