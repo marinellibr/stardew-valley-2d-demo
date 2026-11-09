@@ -1,0 +1,982 @@
+const game = document.querySelector("#game");
+const canvas = document.querySelector("#player");
+const context = canvas.getContext("2d");
+const spriteSheet = new Image();
+const tileGrid = document.querySelector("#tile-grid");
+const houseRoom = document.querySelector("#house-room");
+const houseTileGrid = document.querySelector("#house-tile-grid");
+const outdoorMapLayer = document.querySelector("#outdoor-map-layer");
+const houseMapLayer = document.querySelector("#house-map-layer");
+const outdoorBuildingsLayer = document.querySelector("#outdoor-buildings-layer");
+const houseBuildingsLayer = document.querySelector("#house-buildings-layer");
+const mapEditor = document.querySelector("#map-editor");
+const selectedTileLabel = document.querySelector("#selected-tile-label");
+const toggleTileBlock = document.querySelector("#toggle-tile-block");
+const buildingLibrary = document.querySelector("#building-library");
+const placedBuildingList = document.querySelector("#placed-building-list");
+const placedBuildingsTitle = document.querySelector("#placed-buildings-title");
+
+context.imageSmoothingEnabled = false;
+spriteSheet.src = "assets/alex-sprites.png";
+
+const FRAME_WIDTH = 16;
+const FRAME_HEIGHT = 32;
+const FRAMES_PER_DIRECTION = 4;
+const TILE_SIZE = 64;
+const STORAGE_KEY = "stardew-map-editor-v1";
+const SHEET_SCALE = 4;
+const PICKER_SCALE = 2;
+
+const SHEETS = {
+  "outdoors-spring": { file: "assets/tilesets/outdoors-spring.png", width: 656, height: 1664 },
+  flooring: { file: "assets/tilesets/flooring.png", width: 512, height: 256 },
+  "farm-buildings": { file: "assets/tilesets/farm-buildings.png", width: 919, height: 412 },
+  cabins: { file: "assets/tilesets/cabins.png", width: 240, height: 784 },
+  farmhouse: { file: "assets/tilesets/farmhouse.png", width: 192, height: 352 },
+  furniture: { file: "assets/tilesets/furniture.png", width: 980, height: 1488 },
+};
+
+const BUILDING_ASSETS = [
+  { name: "cabin-01", file: "assets/tiles/buildings/cabin-01.png", width: 80, height: 112 },
+  { name: "barn-01", width: 112, height: 124 },
+  { name: "barn-02", width: 112, height: 124 },
+  { name: "barn-03", width: 116, height: 124 },
+  { name: "silo", width: 64, height: 128 },
+  { name: "well", width: 64, height: 96 },
+  { name: "special-building", width: 184, height: 148 },
+  { name: "obelisk-01", width: 56, height: 148 },
+  { name: "obelisk-02", width: 55, height: 148 },
+  { name: "coop-01", width: 116, height: 132 },
+  { name: "coop-02", width: 116, height: 132 },
+  { name: "coop-03", width: 116, height: 132 },
+  { name: "shed", width: 72, height: 112 },
+  { name: "construction-frame", width: 120, height: 144 },
+  { name: "tree-huts", width: 192, height: 80 },
+  { name: "farmhouse-01", width: 148, height: 148 },
+  { name: "farmhouse-02", width: 152, height: 148 },
+  { name: "farmhouse-03", width: 156, height: 148 },
+  { name: "greenhouse", width: 120, height: 172 },
+  { name: "windmill", width: 232, height: 172 },
+  { name: "clock", width: 56, height: 88 },
+].map((asset) => ({
+  ...asset,
+  file: asset.file ?? `assets/tiles/buildings/farm/${asset.name}.png`,
+}));
+
+const DEFAULT_OUTDOOR_BLOCKED = [
+  "2,1", "3,1", "4,1",
+  "1,2", "2,2", "3,2", "4,2", "5,2",
+  "1,3", "2,3", "3,3", "4,3", "5,3",
+  "1,4", "2,4", "3,4", "4,4", "5,4",
+  "1,5", "2,5", "4,5", "5,5",
+  "1,6", "2,6", "4,6", "5,6",
+];
+
+const DEFAULT_MAP = {
+  version: 1,
+  tileSize: TILE_SIZE,
+  maps: {
+    outdoor: {
+      defaultTile: { sheet: "outdoors-spring", x: 32, y: 208 },
+      tiles: {},
+      blocked: DEFAULT_OUTDOOR_BLOCKED,
+      buildings: [],
+    },
+    house: { defaultTile: null, tiles: {}, blocked: [], buildings: [] },
+  },
+};
+
+function loadMapState() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch (error) {
+    console.warn("Não foi possível ler o mapa do localStorage.", error);
+  }
+  return JSON.parse(JSON.stringify(DEFAULT_MAP));
+}
+
+let mapState = loadMapState();
+let selectedMapTile = null;
+let buildingPlacement = null;
+let suppressNextTileClick = false;
+let currentScene = "outdoor";
+
+const outfitSourceX = {
+  green: 0,
+  red: 192,
+};
+
+// Primeiro grid 4x4: uma linha por direção e quatro passos por linha.
+const directionRow = {
+  down: 0,
+  right: 1,
+  up: 2,
+  left: 3,
+};
+
+const keys = new Set();
+const player = {
+  x: 0,
+  y: 0,
+  speed: 230,
+  direction: "down",
+  moving: false,
+  frame: 0,
+  animationTime: 0,
+  outfit: "green",
+};
+
+const controlKeys = new Set([
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "KeyW",
+  "KeyA",
+  "KeyS",
+  "KeyD",
+]);
+
+const zoomShortcutKeys = new Set(["+", "=", "-", "0"]);
+
+function drawPlayer() {
+  context.clearRect(0, 0, canvas.width, canvas.height);
+
+  context.drawImage(
+    spriteSheet,
+    outfitSourceX[player.outfit] + player.frame * FRAME_WIDTH,
+    directionRow[player.direction] * FRAME_HEIGHT,
+    FRAME_WIDTH,
+    FRAME_HEIGHT,
+    0,
+    0,
+    canvas.width,
+    canvas.height,
+  );
+}
+
+function editorEnabled() {
+  return window.innerWidth > 768;
+}
+
+function persistMap() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mapState));
+  } catch (error) {
+    console.warn("Não foi possível salvar o mapa no localStorage.", error);
+  }
+}
+
+function sceneMap(scene = currentScene) {
+  return mapState.maps[scene];
+}
+
+function isMapTileBlocked(scene, x, y) {
+  return sceneMap(scene).blocked.includes(`${x},${y}`);
+}
+
+function applyTileStyle(element, tile) {
+  if (!tile) {
+    element.removeAttribute("style");
+    return;
+  }
+
+  const sheet = SHEETS[tile.sheet];
+  if (!sheet) return;
+  element.style.backgroundImage = `url("${sheet.file}")`;
+  element.style.backgroundSize = `${sheet.width * SHEET_SCALE}px ${sheet.height * SHEET_SCALE}px`;
+  element.style.backgroundPosition = `${-tile.x * SHEET_SCALE}px ${-tile.y * SHEET_SCALE}px`;
+}
+
+function mapDimensions(scene) {
+  if (scene === "house") {
+    return {
+      columns: Math.ceil(houseRoom.clientWidth / TILE_SIZE),
+      rows: Math.ceil(houseRoom.clientHeight / TILE_SIZE),
+    };
+  }
+  return {
+    columns: Math.ceil(game.clientWidth / TILE_SIZE),
+    rows: Math.ceil(game.clientHeight / TILE_SIZE),
+  };
+}
+
+function renderMapLayer(scene) {
+  const layer = scene === "house" ? houseMapLayer : outdoorMapLayer;
+  const { columns, rows } = mapDimensions(scene);
+  const fragment = document.createDocumentFragment();
+  layer.replaceChildren();
+  layer.style.gridTemplateColumns = `repeat(${columns}, ${TILE_SIZE}px)`;
+  layer.style.gridTemplateRows = `repeat(${rows}, ${TILE_SIZE}px)`;
+
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < columns; x += 1) {
+      const cell = document.createElement("div");
+      cell.className = "map-tile-cell";
+      cell.dataset.x = String(x);
+      cell.dataset.y = String(y);
+      applyTileStyle(cell, sceneMap(scene).tiles[`${x},${y}`]);
+      fragment.append(cell);
+    }
+  }
+
+  layer.append(fragment);
+}
+
+function refreshGridState(scene) {
+  const grid = scene === "house" ? houseTileGrid : tileGrid;
+  grid.querySelectorAll(".tile-coordinate").forEach((tile) => {
+    const x = Number(tile.dataset.x);
+    const y = Number(tile.dataset.y);
+    tile.classList.toggle("is-blocked", isMapTileBlocked(scene, x, y));
+    tile.classList.toggle(
+      "is-selected",
+      selectedMapTile?.scene === scene && selectedMapTile.x === x && selectedMapTile.y === y,
+    );
+  });
+}
+
+function renderPlacedBuildings(scene) {
+  const layer = scene === "house" ? houseBuildingsLayer : outdoorBuildingsLayer;
+  const fragment = document.createDocumentFragment();
+  layer.replaceChildren();
+  for (const building of sceneMap(scene).buildings) {
+    const asset = BUILDING_ASSETS.find((candidate) => candidate.name === building.asset);
+    if (!asset) continue;
+    const image = document.createElement("img");
+    image.className = "placed-building";
+    image.src = asset.file;
+    image.alt = "";
+    image.style.left = `${building.x}px`;
+    image.style.top = `${building.y}px`;
+    image.style.width = `${asset.width * SHEET_SCALE}px`;
+    image.style.height = `${asset.height * SHEET_SCALE}px`;
+    fragment.append(image);
+  }
+  layer.append(fragment);
+  renderPlacedBuildingList(scene);
+}
+
+function removePlacedBuilding(scene, id) {
+  const buildings = sceneMap(scene).buildings;
+  const buildingIndex = buildings.findIndex((building) => building.id === id);
+  if (buildingIndex === -1) return;
+
+  buildings.splice(buildingIndex, 1);
+  persistMap();
+  renderPlacedBuildings(scene);
+}
+
+function renderPlacedBuildingList(scene = currentScene) {
+  placedBuildingsTitle.textContent = `Construções colocadas · ${scene === "house" ? "casa" : "exterior"}`;
+  const buildings = sceneMap(scene).buildings;
+
+  if (buildings.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "placed-building-empty";
+    empty.textContent = "Nenhuma construção nesta camada.";
+    placedBuildingList.replaceChildren(empty);
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  buildings.forEach((building) => {
+    const asset = BUILDING_ASSETS.find((candidate) => candidate.name === building.asset);
+    if (!asset) return;
+
+    const row = document.createElement("div");
+    const image = document.createElement("img");
+    const info = document.createElement("div");
+    const name = document.createElement("strong");
+    const position = document.createElement("span");
+    const removeButton = document.createElement("button");
+
+    row.className = "placed-building-row";
+    image.src = asset.file;
+    image.alt = "";
+    info.className = "placed-building-info";
+    name.textContent = asset.name;
+    position.textContent = `tile ${building.x / TILE_SIZE},${building.y / TILE_SIZE}`;
+    removeButton.className = "remove-building-button";
+    removeButton.type = "button";
+    removeButton.textContent = "Remover";
+    removeButton.setAttribute("aria-label", `Remover ${asset.name}`);
+    removeButton.addEventListener("click", () => removePlacedBuilding(scene, building.id));
+
+    info.append(name, position);
+    row.append(image, info, removeButton);
+    fragment.append(row);
+  });
+
+  placedBuildingList.replaceChildren(fragment);
+}
+
+function buildTileGrid() {
+  const columns = Math.ceil(game.clientWidth / TILE_SIZE);
+  const rows = Math.ceil(game.clientHeight / TILE_SIZE);
+  const fragment = document.createDocumentFragment();
+
+  tileGrid.replaceChildren();
+  tileGrid.style.gridTemplateColumns = `repeat(${columns}, ${TILE_SIZE}px)`;
+  tileGrid.style.gridTemplateRows = `repeat(${rows}, ${TILE_SIZE}px)`;
+
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < columns; x += 1) {
+      const tile = document.createElement("div");
+      const label = document.createElement("span");
+      tile.className = "tile-coordinate";
+      tile.dataset.scene = "outdoor";
+      tile.dataset.x = String(x);
+      tile.dataset.y = String(y);
+      label.textContent = `${x},${y}`;
+      tile.append(label);
+      fragment.append(tile);
+    }
+  }
+
+  tileGrid.append(fragment);
+  renderMapLayer("outdoor");
+  refreshGridState("outdoor");
+}
+
+function buildHouseTileGrid() {
+  const columns = Math.ceil(houseRoom.clientWidth / TILE_SIZE);
+  const rows = Math.ceil(houseRoom.clientHeight / TILE_SIZE);
+  const fragment = document.createDocumentFragment();
+
+  houseTileGrid.replaceChildren();
+  houseTileGrid.style.gridTemplateColumns = `repeat(${columns}, ${TILE_SIZE}px)`;
+  houseTileGrid.style.gridTemplateRows = `repeat(${rows}, ${TILE_SIZE}px)`;
+
+  for (let y = 0; y < rows; y += 1) {
+    for (let x = 0; x < columns; x += 1) {
+      const tile = document.createElement("div");
+      const label = document.createElement("span");
+      tile.className = "tile-coordinate";
+      tile.dataset.scene = "house";
+      tile.dataset.x = String(x);
+      tile.dataset.y = String(y);
+      label.textContent = `${x},${y}`;
+      tile.append(label);
+      fragment.append(tile);
+    }
+  }
+
+  houseTileGrid.append(fragment);
+  renderMapLayer("house");
+  refreshGridState("house");
+}
+
+function playerSize() {
+  const styles = getComputedStyle(canvas);
+  return {
+    width: Number.parseFloat(styles.width),
+    height: Number.parseFloat(styles.height),
+  };
+}
+
+function centerPlayer() {
+  const size = playerSize();
+  player.x = (game.clientWidth - size.width) / 2;
+  player.y = (game.clientHeight - size.height) / 2;
+
+  if (currentScene === "outdoor" && positionTouchesBlockedTile(player.x, player.y)) {
+    player.x = 0;
+    player.y = 0;
+  }
+
+  renderPosition();
+}
+
+function renderPosition() {
+  canvas.style.transform = `translate3d(${player.x}px, ${player.y}px, 0)`;
+}
+
+function inputAxis() {
+  const left = keys.has("ArrowLeft") || keys.has("KeyA");
+  const right = keys.has("ArrowRight") || keys.has("KeyD");
+  const up = keys.has("ArrowUp") || keys.has("KeyW");
+  const down = keys.has("ArrowDown") || keys.has("KeyS");
+  return { x: Number(right) - Number(left), y: Number(down) - Number(up) };
+}
+
+function playerHitbox(x, y) {
+  const size = playerSize();
+  return {
+    left: x + size.width * 0.25,
+    right: x + size.width * 0.75 - 1,
+    top: y + size.height * 0.75,
+    bottom: y + size.height - 1,
+  };
+}
+
+function positionTouchesBlockedTile(x, y) {
+  // Apenas a base do personagem colide, simulando a área dos pés.
+  const hitbox = playerHitbox(x, y);
+
+  const startTileX = Math.floor(hitbox.left / TILE_SIZE);
+  const endTileX = Math.floor(hitbox.right / TILE_SIZE);
+  const startTileY = Math.floor(hitbox.top / TILE_SIZE);
+  const endTileY = Math.floor(hitbox.bottom / TILE_SIZE);
+
+  for (let tileY = startTileY; tileY <= endTileY; tileY += 1) {
+    for (let tileX = startTileX; tileX <= endTileX; tileX += 1) {
+      if (isMapTileBlocked("outdoor", tileX, tileY)) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function headTouchesHouseDoor(x, y) {
+  const size = playerSize();
+  const head = {
+    left: x + size.width * 0.125,
+    right: x + size.width * 0.875 - 1,
+    top: y,
+    bottom: y + size.height * 0.5 - 1,
+  };
+  const doorTile = {
+    left: 3 * TILE_SIZE,
+    right: 4 * TILE_SIZE - 1,
+    top: 4 * TILE_SIZE,
+    bottom: 5 * TILE_SIZE - 1,
+  };
+
+  return (
+    head.left <= doorTile.right &&
+    head.right >= doorTile.left &&
+    head.top <= doorTile.bottom &&
+    head.bottom >= doorTile.top
+  );
+}
+
+function houseWalkableBounds() {
+  const room = houseRoom.getBoundingClientRect();
+  return {
+    left: room.left + TILE_SIZE,
+    right: room.right - TILE_SIZE,
+    top: room.top + TILE_SIZE,
+    bottom: room.bottom - TILE_SIZE,
+    centerX: room.left + room.width / 2,
+  };
+}
+
+function positionTouchesHouseWall(x, y) {
+  const hitbox = playerHitbox(x, y);
+  const bounds = houseWalkableBounds();
+  const touchesBoundary = (
+    hitbox.left < bounds.left ||
+    hitbox.right > bounds.right ||
+    hitbox.top < bounds.top ||
+    hitbox.bottom > bounds.bottom
+  );
+  if (touchesBoundary) return true;
+
+  const room = houseRoom.getBoundingClientRect();
+  const startTileX = Math.floor((hitbox.left - room.left) / TILE_SIZE);
+  const endTileX = Math.floor((hitbox.right - room.left) / TILE_SIZE);
+  const startTileY = Math.floor((hitbox.top - room.top) / TILE_SIZE);
+  const endTileY = Math.floor((hitbox.bottom - room.top) / TILE_SIZE);
+
+  for (let tileY = startTileY; tileY <= endTileY; tileY += 1) {
+    for (let tileX = startTileX; tileX <= endTileX; tileX += 1) {
+      if (isMapTileBlocked("house", tileX, tileY)) return true;
+    }
+  }
+  return false;
+}
+
+function reachesHouseExit(x, y) {
+  const hitbox = playerHitbox(x, y);
+  const bounds = houseWalkableBounds();
+  const playerCenterX = (hitbox.left + hitbox.right) / 2;
+  return (
+    hitbox.bottom > bounds.bottom &&
+    Math.abs(playerCenterX - bounds.centerX) < TILE_SIZE / 2
+  );
+}
+
+function routeIsHouse() {
+  return location.pathname.endsWith("/house") || location.hash === "#/house";
+}
+
+function writeRoute(scene) {
+  const path = scene === "house" ? "/house" : "/";
+  const isStaticHost = location.protocol === "file:" || location.hostname.endsWith("github.io");
+  if (isStaticHost) {
+    location.hash = scene === "house" ? "/house" : "";
+  } else {
+    history.pushState({ scene }, "", path);
+  }
+}
+
+function spawnPlayerInHouse() {
+  const bounds = houseWalkableBounds();
+  player.x = bounds.centerX - playerSize().width / 2;
+  player.y = bounds.bottom - playerSize().height - 8;
+  player.direction = "up";
+  renderPosition();
+}
+
+function spawnPlayerOutsideDoor() {
+  player.x = 3 * TILE_SIZE;
+  // Mantém toda a cabeça abaixo do tile 3,4 ao retornar ao exterior.
+  player.y = 5 * TILE_SIZE;
+  player.direction = "down";
+  renderPosition();
+}
+
+function showScene(scene, { pushRoute = true } = {}) {
+  cancelBuildingPlacement();
+  selectedMapTile = null;
+  mapEditor.classList.remove("is-open");
+  currentScene = scene;
+  document.body.classList.toggle("house-route", scene === "house");
+  keys.clear();
+
+  if (pushRoute) {
+    writeRoute(scene);
+  }
+
+  if (scene === "house") {
+    buildHouseTileGrid();
+    renderPlacedBuildings("house");
+    spawnPlayerInHouse();
+  } else {
+    renderPlacedBuildings("outdoor");
+    spawnPlayerOutsideDoor();
+  }
+}
+
+function updateBlockButton() {
+  if (!selectedMapTile) {
+    toggleTileBlock.disabled = true;
+    toggleTileBlock.textContent = "Bloquear tile";
+    toggleTileBlock.classList.remove("is-blocked");
+    return;
+  }
+  const blocked = isMapTileBlocked(
+    selectedMapTile.scene,
+    selectedMapTile.x,
+    selectedMapTile.y,
+  );
+  toggleTileBlock.disabled = false;
+  toggleTileBlock.textContent = blocked ? "Desbloquear tile" : "Bloquear tile";
+  toggleTileBlock.classList.toggle("is-blocked", blocked);
+}
+
+function selectMapTile(scene, x, y) {
+  if (!editorEnabled() || buildingPlacement) return;
+  selectedMapTile = { scene, x, y };
+  selectedTileLabel.textContent = `${scene} · ${x},${y}`;
+  mapEditor.classList.add("is-open");
+  refreshGridState("outdoor");
+  refreshGridState("house");
+  updateBlockButton();
+  renderPlacedBuildingList(scene);
+}
+
+function applySelectedMapTile(tileDefinition) {
+  if (!selectedMapTile) return;
+  const key = `${selectedMapTile.x},${selectedMapTile.y}`;
+  sceneMap(selectedMapTile.scene).tiles[key] = tileDefinition;
+  persistMap();
+  renderMapLayer(selectedMapTile.scene);
+}
+
+function buildTilesetPicker(details) {
+  if (details.dataset.ready === "true") return;
+  const sheetId = details.dataset.sheet;
+  const sheet = SHEETS[sheetId];
+  const picker = details.querySelector(".tileset-picker");
+  const wrapper = document.createElement("div");
+  const image = document.createElement("img");
+  const selection = document.createElement("span");
+  wrapper.className = "tileset-sheet";
+  selection.className = "tileset-sheet-selection";
+  image.src = sheet.file;
+  image.alt = sheetId;
+  image.draggable = false;
+  image.width = sheet.width * PICKER_SCALE;
+  image.height = sheet.height * PICKER_SCALE;
+  wrapper.append(image, selection);
+  picker.append(wrapper);
+
+  wrapper.addEventListener("click", (event) => {
+    if (!selectedMapTile) return;
+    const rect = wrapper.getBoundingClientRect();
+    const sourceX = Math.floor((event.clientX - rect.left) / (16 * PICKER_SCALE)) * 16;
+    const sourceY = Math.floor((event.clientY - rect.top) / (16 * PICKER_SCALE)) * 16;
+    if (sourceX >= sheet.width || sourceY >= sheet.height) return;
+    selection.style.display = "block";
+    selection.style.left = `${sourceX * PICKER_SCALE}px`;
+    selection.style.top = `${sourceY * PICKER_SCALE}px`;
+    applySelectedMapTile({ sheet: sheetId, x: sourceX, y: sourceY });
+  });
+
+  details.dataset.ready = "true";
+}
+
+function cancelBuildingPlacement() {
+  buildingPlacement?.preview.remove();
+  buildingPlacement = null;
+  buildingLibrary.querySelectorAll(".building-option").forEach((button) => {
+    button.classList.remove("is-active");
+  });
+}
+
+function beginBuildingPlacement(asset, button) {
+  cancelBuildingPlacement();
+  const preview = document.createElement("img");
+  preview.className = "building-preview";
+  preview.src = asset.file;
+  preview.alt = "";
+  preview.style.width = `${asset.width * SHEET_SCALE}px`;
+  preview.style.height = `${asset.height * SHEET_SCALE}px`;
+  const container = currentScene === "house" ? houseRoom : game;
+  container.append(preview);
+  button.classList.add("is-active");
+  buildingPlacement = {
+    asset,
+    preview,
+    scene: currentScene,
+    x: 0,
+    y: 0,
+    valid: false,
+  };
+}
+
+function renderBuildingLibrary() {
+  const fragment = document.createDocumentFragment();
+  for (const asset of BUILDING_ASSETS) {
+    const button = document.createElement("button");
+    const image = document.createElement("img");
+    const label = document.createElement("span");
+    button.className = "building-option";
+    button.type = "button";
+    image.src = asset.file;
+    image.alt = "";
+    label.textContent = asset.name;
+    button.append(image, label);
+    button.addEventListener("click", () => beginBuildingPlacement(asset, button));
+    fragment.append(button);
+  }
+  buildingLibrary.replaceChildren(fragment);
+}
+
+function updateBuildingPreview(event) {
+  if (!buildingPlacement || buildingPlacement.scene !== currentScene) return;
+  const container = currentScene === "house" ? houseRoom : game;
+  const rect = container.getBoundingClientRect();
+  const width = buildingPlacement.asset.width * SHEET_SCALE;
+  const height = buildingPlacement.asset.height * SHEET_SCALE;
+  const rawX = event.clientX - rect.left;
+  const rawY = event.clientY - rect.top;
+  const maxX = Math.max(0, Math.floor((rect.width - width) / TILE_SIZE) * TILE_SIZE);
+  const maxY = Math.max(0, Math.floor((rect.height - height) / TILE_SIZE) * TILE_SIZE);
+  const x = Math.max(0, Math.min(maxX, Math.floor(rawX / TILE_SIZE) * TILE_SIZE));
+  const y = Math.max(0, Math.min(maxY, Math.floor(rawY / TILE_SIZE) * TILE_SIZE));
+  buildingPlacement.x = x;
+  buildingPlacement.y = y;
+  buildingPlacement.valid = (
+    event.clientX >= rect.left && event.clientX <= rect.right &&
+    event.clientY >= rect.top && event.clientY <= rect.bottom
+  );
+  buildingPlacement.preview.style.display = buildingPlacement.valid ? "block" : "none";
+  buildingPlacement.preview.style.left = `${x}px`;
+  buildingPlacement.preview.style.top = `${y}px`;
+}
+
+function confirmBuildingPlacement() {
+  if (!buildingPlacement?.valid) return false;
+  sceneMap(buildingPlacement.scene).buildings.push({
+    id: `${buildingPlacement.asset.name}-${Date.now()}`,
+    asset: buildingPlacement.asset.name,
+    x: buildingPlacement.x,
+    y: buildingPlacement.y,
+  });
+  const scene = buildingPlacement.scene;
+  persistMap();
+  cancelBuildingPlacement();
+  renderPlacedBuildings(scene);
+  return true;
+}
+
+function update(deltaTime) {
+  const axis = inputAxis();
+  const length = Math.hypot(axis.x, axis.y);
+  player.moving = length > 0;
+
+  if (player.moving) {
+    const movementX = (axis.x / length) * player.speed * deltaTime;
+    const movementY = (axis.y / length) * player.speed * deltaTime;
+    const nextX = player.x + movementX;
+    const nextY = player.y + movementY;
+
+    if (currentScene === "outdoor" && axis.y < 0 && headTouchesHouseDoor(player.x, nextY)) {
+      showScene("house");
+      return;
+    }
+
+    if (currentScene === "house" && axis.y > 0 && reachesHouseExit(player.x, nextY)) {
+      showScene("outdoor");
+      return;
+    }
+
+    const touchesWall = currentScene === "house"
+      ? positionTouchesHouseWall
+      : positionTouchesBlockedTile;
+
+    // Eixos separados permitem deslizar pela borda da construção.
+    if (!touchesWall(nextX, player.y)) {
+      player.x = nextX;
+    }
+    if (!touchesWall(player.x, nextY)) {
+      player.y = nextY;
+    }
+
+    if (Math.abs(axis.x) > Math.abs(axis.y)) {
+      player.direction = axis.x > 0 ? "right" : "left";
+    } else {
+      player.direction = axis.y > 0 ? "down" : "up";
+    }
+
+    player.animationTime += deltaTime;
+    player.frame = Math.floor(player.animationTime / 0.13) % FRAMES_PER_DIRECTION;
+  } else {
+    player.animationTime = 0;
+    player.frame = 0;
+  }
+
+  const size = playerSize();
+  player.x = Math.max(0, Math.min(game.clientWidth - size.width, player.x));
+  player.y = Math.max(0, Math.min(game.clientHeight - size.height, player.y));
+
+  drawPlayer();
+  renderPosition();
+}
+
+let previousTime = performance.now();
+
+function gameLoop(time) {
+  const deltaTime = Math.min((time - previousTime) / 1000, 0.05);
+  previousTime = time;
+  update(deltaTime);
+  requestAnimationFrame(gameLoop);
+}
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && buildingPlacement) {
+    event.preventDefault();
+    cancelBuildingPlacement();
+    return;
+  }
+
+  if ((event.ctrlKey || event.metaKey) && zoomShortcutKeys.has(event.key)) {
+    event.preventDefault();
+    return;
+  }
+
+  if (controlKeys.has(event.code)) {
+    event.preventDefault();
+    keys.add(event.code);
+  }
+});
+
+window.addEventListener("keyup", (event) => {
+  keys.delete(event.code);
+});
+
+window.addEventListener("blur", () => keys.clear());
+
+window.addEventListener(
+  "wheel",
+  (event) => {
+    if (!event.target.closest(".map-editor")) event.preventDefault();
+  },
+  { passive: false },
+);
+
+document.addEventListener(
+  "touchmove",
+  (event) => {
+    event.preventDefault();
+  },
+  { passive: false },
+);
+
+["gesturestart", "gesturechange", "gestureend"].forEach((eventName) => {
+  document.addEventListener(eventName, (event) => event.preventDefault());
+});
+
+let lastTouchEnd = 0;
+document.addEventListener(
+  "touchend",
+  (event) => {
+    const now = Date.now();
+    if (now - lastTouchEnd <= 300) {
+      event.preventDefault();
+    }
+    lastTouchEnd = now;
+  },
+  { passive: false },
+);
+
+document.querySelectorAll(".outfit-button").forEach((button) => {
+  button.addEventListener("click", () => {
+    player.outfit = button.dataset.outfit;
+
+    document.querySelectorAll(".outfit-button").forEach((option) => {
+      const isActive = option === button;
+      option.classList.toggle("is-active", isActive);
+      option.setAttribute("aria-pressed", String(isActive));
+    });
+
+    drawPlayer();
+  });
+});
+
+document.querySelectorAll(".direction-button").forEach((button) => {
+  const code = button.dataset.code;
+
+  const pressDirection = (event) => {
+    event.preventDefault();
+    keys.add(code);
+    button.classList.add("is-pressed");
+    if (event.pointerId !== undefined) {
+      button.setPointerCapture(event.pointerId);
+    }
+  };
+
+  const releaseDirection = (event) => {
+    event.preventDefault();
+    keys.delete(code);
+    button.classList.remove("is-pressed");
+  };
+
+  button.addEventListener("pointerdown", pressDirection);
+  button.addEventListener("pointerup", releaseDirection);
+  button.addEventListener("pointercancel", releaseDirection);
+  button.addEventListener("lostpointercapture", releaseDirection);
+  button.addEventListener("contextmenu", (event) => event.preventDefault());
+});
+
+[tileGrid, houseTileGrid].forEach((grid) => {
+  grid.addEventListener("click", (event) => {
+    if (suppressNextTileClick) {
+      suppressNextTileClick = false;
+      return;
+    }
+    const tile = event.target.closest(".tile-coordinate");
+    if (!tile || buildingPlacement) return;
+    selectMapTile(tile.dataset.scene, Number(tile.dataset.x), Number(tile.dataset.y));
+  });
+});
+
+toggleTileBlock.addEventListener("click", () => {
+  if (!selectedMapTile) return;
+  const key = `${selectedMapTile.x},${selectedMapTile.y}`;
+  const blocked = sceneMap(selectedMapTile.scene).blocked;
+  const index = blocked.indexOf(key);
+  if (index >= 0) blocked.splice(index, 1);
+  else blocked.push(key);
+  persistMap();
+  refreshGridState(selectedMapTile.scene);
+  updateBlockButton();
+});
+
+document.querySelector("#close-map-editor").addEventListener("click", () => {
+  mapEditor.classList.remove("is-open");
+  cancelBuildingPlacement();
+});
+
+document.querySelectorAll(".editor-tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    const target = tab.dataset.editorTab;
+    document.querySelectorAll(".editor-tab").forEach((option) => {
+      const active = option === tab;
+      option.classList.toggle("is-active", active);
+      option.setAttribute("aria-selected", String(active));
+    });
+    document.querySelectorAll(".editor-panel").forEach((panel) => {
+      panel.classList.toggle("is-active", panel.dataset.editorPanel === target);
+    });
+    if (target === "buildings") renderPlacedBuildingList(currentScene);
+  });
+});
+
+document.querySelectorAll("#tileset-accordions details").forEach((details) => {
+  details.addEventListener("toggle", () => {
+    if (details.open) buildTilesetPicker(details);
+  });
+});
+
+game.addEventListener("pointermove", updateBuildingPreview);
+game.addEventListener(
+  "pointerdown",
+  (event) => {
+    if (!buildingPlacement || !editorEnabled()) return;
+    if (event.target.closest(".outfit-picker")) return;
+    updateBuildingPreview(event);
+    if (confirmBuildingPlacement()) {
+      suppressNextTileClick = true;
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  },
+  true,
+);
+
+window.addEventListener("resize", () => {
+  buildTileGrid();
+  buildHouseTileGrid();
+  if (currentScene === "house") {
+    spawnPlayerInHouse();
+  } else {
+    const size = playerSize();
+    player.x = Math.max(0, Math.min(game.clientWidth - size.width, player.x));
+    player.y = Math.max(0, Math.min(game.clientHeight - size.height, player.y));
+    if (positionTouchesBlockedTile(player.x, player.y)) {
+      player.x = 0;
+      player.y = 0;
+    }
+  }
+  renderPosition();
+});
+
+window.addEventListener("popstate", () => {
+  showScene(routeIsHouse() ? "house" : "outdoor", { pushRoute: false });
+});
+
+window.addEventListener("hashchange", () => {
+  if (location.protocol === "file:" || location.hostname.endsWith("github.io")) {
+    showScene(routeIsHouse() ? "house" : "outdoor", { pushRoute: false });
+  }
+});
+
+spriteSheet.addEventListener("load", () => {
+  persistMap();
+  renderBuildingLibrary();
+  buildTileGrid();
+  renderPlacedBuildings("outdoor");
+  renderPlacedBuildings("house");
+  currentScene = routeIsHouse() ? "house" : "outdoor";
+  renderPlacedBuildingList(currentScene);
+  document.body.classList.toggle("house-route", currentScene === "house");
+  if (currentScene === "house") {
+    buildHouseTileGrid();
+    spawnPlayerInHouse();
+  } else {
+    centerPlayer();
+  }
+  drawPlayer();
+  requestAnimationFrame(gameLoop);
+});
+
+spriteSheet.addEventListener("error", () => {
+  console.error("Não foi possível carregar a folha de sprites.");
+});

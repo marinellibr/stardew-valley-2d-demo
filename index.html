@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <title>Fazendeiro 2D — Protótipo</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main id="game" aria-label="Área do jogo">
+      <div id="outdoor-map-layer" class="map-tile-layer" aria-hidden="true"></div>
+      <img
+        id="cabin-01"
+        class="world-building"
+        src="assets/tiles/buildings/cabin-01.png"
+        alt="Primeira cabana"
+        draggable="false"
+      />
+      <div id="outdoor-buildings-layer" class="placed-buildings-layer" aria-hidden="true"></div>
+      <section id="house-scene" class="house-scene" aria-label="Interior da casa">
+        <div id="house-room" class="house-room">
+          <div class="house-floor" aria-hidden="true"></div>
+          <div id="house-map-layer" class="map-tile-layer house-map-layer" aria-hidden="true"></div>
+          <div class="house-furniture house-tv" aria-hidden="true"></div>
+          <div class="house-furniture house-bed" aria-hidden="true"></div>
+          <div id="house-buildings-layer" class="placed-buildings-layer" aria-hidden="true"></div>
+          <div id="house-exit" class="house-exit" aria-label="Saída da casa">SAÍDA</div>
+          <div id="house-tile-grid" class="house-tile-grid" aria-hidden="true"></div>
+        </div>
+      </section>
+      <div id="tile-grid" aria-hidden="true"></div>
+      <canvas id="player" width="16" height="32" aria-label="Personagem controlável"></canvas>
+
+      <section class="outfit-picker" aria-label="Escolha de roupa">
+        <span>Roupa</span>
+        <div class="outfit-options">
+          <button
+            class="outfit-button outfit-button--green is-active"
+            type="button"
+            data-outfit="green"
+            aria-label="Usar roupa tradicional verde"
+            aria-pressed="true"
+          ></button>
+          <button
+            class="outfit-button outfit-button--red"
+            type="button"
+            data-outfit="red"
+            aria-label="Usar roupa vermelha"
+            aria-pressed="false"
+          ></button>
+        </div>
+      </section>
+
+      <section class="help" aria-label="Controles">
+        <strong>Movimento</strong>
+        <span>WASD ou setas</span>
+      </section>
+    </main>
+
+    <aside id="map-editor" class="map-editor" aria-label="Editor do mapa">
+      <header class="map-editor-header">
+        <div>
+          <strong>Editor de mapa</strong>
+          <span id="selected-tile-label">Selecione um tile</span>
+        </div>
+        <button id="close-map-editor" class="editor-icon-button" type="button" aria-label="Fechar editor">×</button>
+      </header>
+
+      <div class="editor-tabs" role="tablist" aria-label="Ferramentas do editor">
+        <button class="editor-tab is-active" type="button" data-editor-tab="tiles" role="tab" aria-selected="true">Tiles</button>
+        <button class="editor-tab" type="button" data-editor-tab="buildings" role="tab" aria-selected="false">Construções</button>
+      </div>
+
+      <section class="editor-panel is-active" data-editor-panel="tiles">
+        <button id="toggle-tile-block" class="block-tile-button" type="button" disabled>Bloquear tile</button>
+        <p class="editor-hint">Clique em um ponto da folha para aplicar o tile selecionado.</p>
+        <div id="tileset-accordions" class="tileset-accordions">
+          <details data-sheet="outdoors-spring"><summary>outdoors-spring.png</summary><div class="tileset-picker"></div></details>
+          <details data-sheet="flooring"><summary>flooring.png</summary><div class="tileset-picker"></div></details>
+          <details data-sheet="farm-buildings"><summary>farm-buildings.png</summary><div class="tileset-picker"></div></details>
+          <details data-sheet="cabins"><summary>cabins.png</summary><div class="tileset-picker"></div></details>
+          <details data-sheet="farmhouse"><summary>farmhouse.png</summary><div class="tileset-picker"></div></details>
+          <details data-sheet="furniture"><summary>furniture.png</summary><div class="tileset-picker"></div></details>
+        </div>
+      </section>
+
+      <section class="editor-panel" data-editor-panel="buildings">
+        <p class="editor-hint">Escolha uma construção, mova o cursor sobre o mapa e clique para posicionar. Esc cancela.</p>
+        <div id="building-library" class="building-library"></div>
+        <div class="placed-buildings-section">
+          <h3 id="placed-buildings-title">Construções colocadas</h3>
+          <p class="editor-hint">As construções ficam em uma segunda camada. Removê-las preserva o tile que está por baixo.</p>
+          <div id="placed-building-list" class="placed-building-list"></div>
+        </div>
+      </section>
+    </aside>
+
+    <nav id="mobile-controls" class="mobile-controls" aria-label="Controles direcionais">
+      <div class="direction-pad">
+        <button class="direction-button direction-button--up" type="button" data-code="ArrowUp" aria-label="Mover para cima">▲</button>
+        <button class="direction-button direction-button--left" type="button" data-code="ArrowLeft" aria-label="Mover para a esquerda">◀</button>
+        <button class="direction-button direction-button--right" type="button" data-code="ArrowRight" aria-label="Mover para a direita">▶</button>
+        <button class="direction-button direction-button--down" type="button" data-code="ArrowDown" aria-label="Mover para baixo">▼</button>
+      </div>
+    </nav>
+
+    <script src="game.js"></script>
+  </body>
+</html>

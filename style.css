@@ -1,0 +1,817 @@
+:root {
+  color-scheme: light;
+  font-family: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  touch-action: none;
+  overscroll-behavior: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: #43bd21;
+}
+
+#game {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #43bd21;
+  background-image: url("assets/tiles/terrain/short-grass.png");
+  background-repeat: repeat;
+  background-size: 64px 64px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  touch-action: none;
+  overscroll-behavior: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+#tile-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  align-content: start;
+  justify-content: start;
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.map-tile-layer,
+.placed-buildings-layer {
+  position: absolute;
+  inset: 0;
+  align-content: start;
+  justify-content: start;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.map-tile-layer {
+  z-index: 0;
+  display: grid;
+}
+
+.map-tile-cell {
+  width: 64px;
+  height: 64px;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.placed-buildings-layer {
+  z-index: 1;
+}
+
+.placed-building,
+.building-preview {
+  position: absolute;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.building-preview {
+  z-index: 12;
+  opacity: 0.5;
+  filter: drop-shadow(0 0 1px #fff);
+}
+
+.world-building {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+#cabin-01 {
+  left: 64px;
+  top: 64px;
+  width: 320px;
+  height: 448px;
+}
+
+.house-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: none;
+  background: #000;
+  pointer-events: none;
+}
+
+.house-room {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 512px;
+  height: 384px;
+  overflow: hidden;
+  background: #5a2e1d;
+  border: 4px solid #2a1410;
+  box-shadow:
+    inset 0 0 0 12px #8b4c27,
+    0 0 0 4px #000;
+  transform: translate(-50%, -50%);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.house-room::before,
+.house-room::after {
+  position: absolute;
+  z-index: 2;
+  content: "";
+  pointer-events: none;
+}
+
+.house-room::before {
+  inset: 0 0 auto;
+  height: 64px;
+  background:
+    linear-gradient(#3b2019 0 10px, transparent 10px),
+    repeating-linear-gradient(90deg, #7e3f22 0 31px, #4a2418 31px 34px, #9d5830 34px 64px);
+  box-shadow: inset 0 -8px 0 #2f1712;
+}
+
+.house-room::after {
+  inset: 64px 0 0;
+  border-right: 64px solid #60311f;
+  border-bottom: 64px solid #60311f;
+  border-left: 64px solid #60311f;
+  box-shadow:
+    inset 8px 0 0 #8b4c27,
+    inset -8px 0 0 #3a1c15,
+    inset 0 -8px 0 #321812;
+}
+
+.house-floor {
+  position: absolute;
+  inset: 64px 64px 64px;
+  z-index: 1;
+  background-color: #b66b32;
+  background-image:
+    linear-gradient(90deg, rgb(88 42 24 / 45%) 2px, transparent 2px),
+    linear-gradient(rgb(255 190 92 / 22%) 2px, transparent 2px);
+  background-size: 64px 32px, 64px 32px;
+  box-shadow: inset 0 0 0 4px #78401f;
+}
+
+.house-map-layer {
+  inset: 0;
+  z-index: 1;
+}
+
+#house-buildings-layer {
+  z-index: 4;
+}
+
+.house-furniture {
+  position: absolute;
+  z-index: 3;
+  background-image: url("assets/tilesets/farmhouse.png");
+  background-repeat: no-repeat;
+  background-size: 768px 1408px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.house-tv {
+  top: 72px;
+  left: 72px;
+  width: 144px;
+  height: 144px;
+  background-position: -288px -336px;
+}
+
+.house-bed {
+  top: 72px;
+  right: 72px;
+  width: 144px;
+  height: 192px;
+  background-position: -384px -48px;
+}
+
+.house-exit {
+  position: absolute;
+  left: 224px;
+  bottom: 0;
+  z-index: 4;
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: end center;
+  padding-bottom: 7px;
+  color: #ffe9a8;
+  background: linear-gradient(90deg, #3a1913 0 8px, #9a4f27 8px 56px, #3a1913 56px);
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 9px;
+  font-weight: 900;
+  box-shadow: inset 0 7px 0 #2b120e;
+}
+
+.house-tile-grid {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: repeat(8, 64px);
+  grid-template-rows: repeat(6, 64px);
+  pointer-events: auto;
+}
+
+.house-tile-grid .tile-coordinate {
+  width: 64px;
+  height: 64px;
+}
+
+body.house-route #game {
+  background: #000;
+}
+
+body.house-route #cabin-01,
+body.house-route #tile-grid {
+  display: none;
+}
+
+body.house-route .house-scene {
+  display: block;
+}
+
+.tile-coordinate {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  box-shadow: inset 0 0 0 1px #ff2a2a;
+  color: #fff;
+  font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 1px 1px 0 #8b0000, -1px -1px 0 #8b0000;
+  cursor: pointer;
+}
+
+.tile-coordinate.is-selected {
+  box-shadow: inset 0 0 0 4px #28ff63;
+}
+
+.tile-coordinate.is-blocked::after {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  padding: 2px 4px;
+  color: #fff;
+  background: #a40000;
+  border-radius: 3px;
+  content: "×";
+  font-size: 12px;
+  line-height: 1;
+}
+
+.tile-coordinate span {
+  position: absolute;
+  top: 4px;
+  left: 5px;
+  padding: 2px 3px;
+  background: rgb(120 0 0 / 55%);
+  border-radius: 2px;
+}
+
+#player {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 64px;
+  height: 128px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  transform: translate3d(0, 0, 0);
+  filter: drop-shadow(0 7px 0 rgb(0 0 0 / 14%));
+  will-change: transform;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.help {
+  position: absolute;
+  left: 20px;
+  bottom: 20px;
+  display: grid;
+  gap: 3px;
+  padding: 10px 14px;
+  color: #65412d;
+  background: #fff8dc;
+  border: 3px solid #d6a85f;
+  border-radius: 6px;
+  box-shadow: 0 4px 0 #9b6a38;
+  font-size: 13px;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.help strong {
+  font-size: 14px;
+}
+
+.outfit-picker {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 10px 14px 12px;
+  color: #65412d;
+  background: #fff8dc;
+  border: 3px solid #d6a85f;
+  border-radius: 8px;
+  box-shadow: 0 4px 0 #9b6a38;
+  font-size: 12px;
+  font-weight: 800;
+  transform: translateX(-50%);
+  z-index: 4;
+}
+
+.outfit-options {
+  display: flex;
+  gap: 12px;
+}
+
+.outfit-button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #9b6a38, 0 3px 0 #76502d;
+  cursor: pointer;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.outfit-button:hover {
+  transform: translateY(-2px);
+}
+
+.outfit-button:focus-visible {
+  outline: 4px solid rgb(49 91 140 / 35%);
+  outline-offset: 4px;
+}
+
+.outfit-button.is-active {
+  box-shadow: 0 0 0 3px #37233d, 0 3px 0 #37233d;
+  transform: translateY(-2px) scale(1.08);
+}
+
+.outfit-button--green {
+  background: #3b8b3e;
+}
+
+.outfit-button--red {
+  background: #b43b32;
+}
+
+.map-editor {
+  position: fixed;
+  top: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 30;
+  display: none;
+  width: 340px;
+  overflow: hidden;
+  color: #fff7d6;
+  background: rgb(30 20 16 / 96%);
+  border: 3px solid #d7a45b;
+  border-radius: 12px;
+  box-shadow: 0 10px 35px rgb(0 0 0 / 50%);
+}
+
+.map-editor.is-open {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+}
+
+.map-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 14px;
+  background: #4b2d1d;
+  border-bottom: 2px solid #8c5831;
+}
+
+.map-editor-header div {
+  display: grid;
+  gap: 3px;
+}
+
+.map-editor-header span {
+  color: #e4bd7b;
+  font-size: 11px;
+}
+
+.editor-icon-button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: #fff7d6;
+  background: #6c3d24;
+  border: 2px solid #b87941;
+  border-radius: 7px;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.editor-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 8px;
+  background: #281a15;
+}
+
+.editor-tab {
+  padding: 9px 8px;
+  color: #dab880;
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.editor-tab.is-active {
+  color: #fff;
+  border-bottom-color: #34d269;
+}
+
+.editor-panel {
+  display: none;
+  min-height: 0;
+  padding: 10px;
+  overflow: auto;
+}
+
+.editor-panel.is-active {
+  display: block;
+}
+
+.block-tile-button {
+  width: 100%;
+  padding: 10px 12px;
+  color: #fff;
+  background: #9c342d;
+  border: 2px solid #ef8b70;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.block-tile-button.is-blocked {
+  background: #2d8b4c;
+  border-color: #7ce59c;
+}
+
+.block-tile-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.editor-hint {
+  margin: 10px 2px;
+  color: #cfae78;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.tileset-accordions {
+  display: grid;
+  gap: 7px;
+}
+
+.tileset-accordions details {
+  background: #39251c;
+  border: 1px solid #6e452c;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.tileset-accordions summary {
+  padding: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tileset-picker {
+  max-height: 250px;
+  overflow: auto;
+  background:
+    linear-gradient(45deg, #292929 25%, transparent 25%),
+    linear-gradient(-45deg, #292929 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #292929 75%),
+    linear-gradient(-45deg, transparent 75%, #292929 75%),
+    #1c1c1c;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-size: 16px 16px;
+  border-top: 1px solid #6e452c;
+}
+
+.tileset-sheet {
+  position: relative;
+  width: max-content;
+  line-height: 0;
+  cursor: crosshair;
+}
+
+.tileset-sheet img {
+  display: block;
+  max-width: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  -webkit-user-drag: none;
+}
+
+.tileset-sheet-selection {
+  position: absolute;
+  display: none;
+  width: 32px;
+  height: 32px;
+  border: 3px solid #28ff63;
+  box-shadow: 0 0 0 1px #001b08;
+  pointer-events: none;
+}
+
+.building-library {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.building-option {
+  display: grid;
+  min-height: 115px;
+  padding: 8px;
+  place-items: center;
+  gap: 5px;
+  color: #f7e2b8;
+  background: #38271f;
+  border: 2px solid #64432e;
+  border-radius: 8px;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.building-option:hover,
+.building-option.is-active {
+  border-color: #28ff63;
+  background: #304529;
+}
+
+.building-option img {
+  max-width: 130px;
+  max-height: 90px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+}
+
+.placed-buildings-section {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 2px solid #65432d;
+}
+
+.placed-buildings-section h3 {
+  margin: 0;
+  color: #ffe8b8;
+  font-size: 13px;
+}
+
+.placed-building-list {
+  display: grid;
+  gap: 7px;
+}
+
+.placed-building-row {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 7px;
+  background: #35251e;
+  border: 1px solid #64432e;
+  border-radius: 8px;
+}
+
+.placed-building-row img {
+  max-width: 42px;
+  max-height: 42px;
+  justify-self: center;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.placed-building-info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.placed-building-info strong {
+  overflow: hidden;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placed-building-info span {
+  color: #cba974;
+  font-size: 10px;
+}
+
+.remove-building-button {
+  padding: 7px 8px;
+  color: #fff;
+  background: #962f2b;
+  border: 1px solid #ef8175;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.placed-building-empty {
+  padding: 12px;
+  color: #b8996b;
+  background: #2a1c17;
+  border: 1px dashed #68462f;
+  border-radius: 8px;
+  font-size: 11px;
+  text-align: center;
+}
+
+.mobile-controls {
+  display: none;
+}
+
+.direction-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 72px);
+  grid-template-rows: repeat(3, 72px);
+  gap: 8px;
+  place-content: center;
+  touch-action: none;
+}
+
+.direction-button {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  place-items: center;
+  color: #fff3c4;
+  background: #613821;
+  border: 4px solid #d7a45b;
+  border-radius: 16px;
+  box-shadow: inset 0 -7px 0 #392014, 0 5px 0 #1b0e09;
+  font-size: 28px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.direction-button.is-pressed {
+  background: #986039;
+  box-shadow: inset 0 -2px 0 #392014, 0 1px 0 #1b0e09;
+  transform: translateY(4px);
+}
+
+.direction-button--up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.direction-button--left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.direction-button--right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.direction-button--down {
+  grid-column: 2;
+  grid-row: 3;
+}
+
+@media (max-width: 520px) {
+  #player {
+    width: 48px;
+    height: 96px;
+  }
+
+  .help {
+    left: 12px;
+    bottom: 12px;
+  }
+
+  .outfit-picker {
+    bottom: 14px;
+  }
+}
+
+@media (max-width: 768px) {
+  html,
+  body {
+    height: 100dvh;
+    background: #000;
+  }
+
+  body {
+    display: grid;
+    grid-template-rows: 50dvh 50dvh;
+  }
+
+  #game {
+    width: 100vw;
+    height: 50dvh;
+  }
+
+  .map-editor,
+  .building-preview {
+    display: none !important;
+  }
+
+  #tile-grid,
+  .house-tile-grid {
+    pointer-events: none;
+  }
+
+  .tile-coordinate {
+    cursor: default;
+  }
+
+  .mobile-controls {
+    display: grid;
+    width: 100vw;
+    height: 50dvh;
+    place-items: center;
+    overflow: hidden;
+    background: #000;
+    touch-action: none;
+  }
+
+  .help {
+    display: none;
+  }
+
+  .outfit-picker {
+    bottom: 10px;
+    padding: 7px 11px 9px;
+    gap: 5px;
+  }
+
+  .outfit-button {
+    width: 23px;
+    height: 23px;
+  }
+}
+
+@media (max-width: 420px) {
+  .direction-pad {
+    grid-template-columns: repeat(3, 62px);
+    grid-template-rows: repeat(3, 62px);
+    gap: 7px;
+  }
+
+  .direction-button {
+    width: 62px;
+    height: 62px;
+    border-radius: 14px;
+    font-size: 24px;
+  }
+}

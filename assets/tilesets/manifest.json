@@ -1,0 +1,60 @@
+{
+  "tileSize": 16,
+  "sheets": {
+    "outdoors-spring": {
+      "file": "outdoors-spring.png",
+      "width": 656,
+      "height": 1664,
+      "categories": ["terrain", "vegetation", "outdoor-structures", "water"]
+    },
+    "farm-buildings": {
+      "file": "farm-buildings.png",
+      "width": 919,
+      "height": 412,
+      "categories": ["farm-buildings", "silos", "greenhouse", "decorations"]
+    },
+    "cabins": {
+      "file": "cabins.png",
+      "width": 240,
+      "height": 784,
+      "categories": ["cabins", "trailers"]
+    },
+    "farmhouse": {
+      "file": "farmhouse.png",
+      "width": 192,
+      "height": 352,
+      "categories": ["interior", "walls", "beds", "appliances"]
+    },
+    "furniture": {
+      "file": "furniture.png",
+      "width": 980,
+      "height": 1488,
+      "categories": ["furniture", "decorations", "plants", "storage"]
+    },
+    "flooring": {
+      "file": "flooring.png",
+      "width": 512,
+      "height": 256,
+      "categories": ["flooring", "paths", "interior-surfaces"]
+    }
+  },
+  "extractedTiles": {
+    "short-grass": {
+      "source": "outdoors-spring",
+      "x": 32,
+      "y": 208,
+      "width": 16,
+      "height": 16,
+      "file": "../tiles/terrain/short-grass.png"
+    },
+    "cabin-01": {
+      "source": "cabins",
+      "x": 0,
+      "y": 0,
+      "width": 80,
+      "height": 112,
+      "file": "../tiles/buildings/cabin-01.png",
+      "worldTile": { "x": 1, "y": 1 }
+    }
+  }
+}

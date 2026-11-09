@@ -1,0 +1,25 @@
+{
+  "source": "../../../tilesets/farm-buildings.png",
+  "assets": [
+    { "name": "barn-01", "x": 0, "y": 0, "width": 112, "height": 124 },
+    { "name": "barn-02", "x": 128, "y": 0, "width": 112, "height": 124 },
+    { "name": "barn-03", "x": 256, "y": 0, "width": 116, "height": 124 },
+    { "name": "silo", "x": 384, "y": 0, "width": 64, "height": 128 },
+    { "name": "well", "x": 448, "y": 16, "width": 64, "height": 96 },
+    { "name": "special-building", "x": 600, "y": 0, "width": 184, "height": 148 },
+    { "name": "obelisk-01", "x": 800, "y": 0, "width": 56, "height": 148 },
+    { "name": "obelisk-02", "x": 864, "y": 0, "width": 55, "height": 148 },
+    { "name": "coop-01", "x": 0, "y": 124, "width": 116, "height": 132 },
+    { "name": "coop-02", "x": 128, "y": 124, "width": 116, "height": 132 },
+    { "name": "coop-03", "x": 256, "y": 124, "width": 116, "height": 132 },
+    { "name": "shed", "x": 376, "y": 128, "width": 72, "height": 112 },
+    { "name": "construction-frame", "x": 480, "y": 96, "width": 120, "height": 144 },
+    { "name": "tree-huts", "x": 600, "y": 160, "width": 192, "height": 80 },
+    { "name": "farmhouse-01", "x": 0, "y": 264, "width": 148, "height": 148 },
+    { "name": "farmhouse-02", "x": 152, "y": 264, "width": 152, "height": 148 },
+    { "name": "farmhouse-03", "x": 304, "y": 264, "width": 156, "height": 148 },
+    { "name": "greenhouse", "x": 480, "y": 240, "width": 120, "height": 172 },
+    { "name": "windmill", "x": 600, "y": 240, "width": 232, "height": 172 },
+    { "name": "clock", "x": 840, "y": 152, "width": 56, "height": 88 }
+  ]
+}
