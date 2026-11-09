@@ -1212,6 +1212,9 @@ function renderAnimalLibrary() {
     button.className = "animal-option";
     button.type = "button";
     preview.style.position = "static";
+    preview.style.width = `${asset.frame * PICKER_SCALE}px`;
+    preview.style.height = `${asset.frame * PICKER_SCALE}px`;
+    preview.style.transform = "none";
     label.textContent = asset.label;
     button.append(preview, label);
     button.addEventListener("click", () => beginAnimalPlacement(asset, button));

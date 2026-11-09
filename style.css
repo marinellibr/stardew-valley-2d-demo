@@ -634,10 +634,12 @@ body.house-route .house-scene {
 }
 
 .animal-option {
-  display: grid;
-  min-height: 92px;
+  display: flex;
+  min-height: 112px;
   padding: 8px;
-  place-items: center;
+  align-items: center;
+  justify-content: flex-end;
+  flex-direction: column;
   gap: 5px;
   color: #f7dfab;
   background: #37271f;
@@ -648,12 +650,21 @@ body.house-route .house-scene {
   cursor: pointer;
 }
 
+.animal-option span {
+  display: block;
+  width: 100%;
+  min-height: 24px;
+  line-height: 12px;
+  text-align: center;
+}
+
 .animal-option.is-active {
   background: #31522f;
   border-color: #8ad76a;
 }
 
 .animal-option canvas {
+  flex: 0 0 auto;
   max-width: 64px;
   max-height: 64px;
   image-rendering: pixelated;
