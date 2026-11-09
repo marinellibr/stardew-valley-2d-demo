@@ -87,6 +87,10 @@ A aba **Mapas** mantém a cena existente como **Cena inicial**, permite criar no
 
 Na aba **Tiles**, as ferramentas **Vazio** e **Restaurar** também funcionam como pincel. Vazio recorta o piso e transforma a área em limite sólido; Restaurar remove a edição daquele ponto e revela novamente o piso-base.
 
+### Furniture
+
+A folha `furniture.png` não aparece mais como tiles isolados. A aba **Furniture** oferece móveis completos, posicionados com snap e salvos em uma camada própria acima do piso e das construções. Cada móvel pode ser removido sem alterar as camadas inferiores.
+
 ### Animais
 
 A aba **Animais** oferece porco, cavalo, cachorro cinza, vaca branca e galinha marrom, separados em `assets/animals/`. Eles são posicionados com snap na grade, salvos por mapa e caminham em direções aleatórias. Ao encontrar uma parede, construção bloqueada ou limite do mapa, viram para o sentido oposto.

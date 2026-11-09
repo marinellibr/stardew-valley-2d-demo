@@ -7,13 +7,14 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <title>Fazendeiro 2D — Protótipo</title>
-    <link rel="stylesheet" href="style.css?v=18" />
+    <link rel="stylesheet" href="style.css?v=19" />
   </head>
   <body>
     <main id="game" aria-label="Área do jogo">
       <div id="outdoor-map-layer" class="map-tile-layer" aria-hidden="true"></div>
       <div id="outdoor-buildings-layer" class="placed-buildings-layer" aria-hidden="true"></div>
       <div id="outdoor-animals-layer" class="animals-layer" aria-hidden="true"></div>
+      <div id="outdoor-furniture-layer" class="furniture-layer" aria-hidden="true"></div>
       <section id="house-scene" class="house-scene" aria-label="Interior da casa">
         <div id="house-room" class="house-room">
           <div class="house-floor" aria-hidden="true"></div>
@@ -22,6 +23,7 @@
           <div class="house-furniture house-bed" aria-hidden="true"></div>
           <div id="house-buildings-layer" class="placed-buildings-layer" aria-hidden="true"></div>
           <div id="house-animals-layer" class="animals-layer" aria-hidden="true"></div>
+          <div id="house-furniture-layer" class="furniture-layer" aria-hidden="true"></div>
           <div id="house-exit" class="house-exit" aria-label="Saída da casa">SAÍDA</div>
           <div id="house-tile-grid" class="house-tile-grid" aria-hidden="true"></div>
         </div>
@@ -63,6 +65,7 @@
       <div class="editor-tabs" role="tablist" aria-label="Ferramentas do editor">
         <button class="editor-tab is-active" type="button" data-editor-tab="tiles" role="tab" aria-selected="true">Tiles</button>
         <button class="editor-tab" type="button" data-editor-tab="buildings" role="tab" aria-selected="false">Construções</button>
+        <button class="editor-tab" type="button" data-editor-tab="furniture" role="tab" aria-selected="false">Furniture</button>
         <button class="editor-tab" type="button" data-editor-tab="animals" role="tab" aria-selected="false">Animais</button>
         <button class="editor-tab" type="button" data-editor-tab="maps" role="tab" aria-selected="false">Mapas</button>
       </div>
@@ -86,7 +89,6 @@
           <details data-sheet="farm-buildings"><summary>farm-buildings.png</summary><div class="tileset-picker"></div></details>
           <details data-sheet="cabins"><summary>cabins.png</summary><div class="tileset-picker"></div></details>
           <details data-sheet="farmhouse"><summary>farmhouse.png</summary><div class="tileset-picker"></div></details>
-          <details data-sheet="furniture"><summary>furniture.png</summary><div class="tileset-picker"></div></details>
         </div>
       </section>
 
@@ -100,6 +102,16 @@
         </div>
       </section>
 
+      <section class="editor-panel" data-editor-panel="furniture">
+        <p class="editor-hint">Escolha um móvel completo, mova sobre o mapa e clique para posicionar com snap.</p>
+        <div id="furniture-library" class="furniture-library"></div>
+        <div class="placed-buildings-section">
+          <h3 id="placed-furniture-title">Móveis colocados</h3>
+          <p class="editor-hint">Os móveis ficam em uma camada acima dos tiles e das construções.</p>
+          <div id="placed-furniture-list" class="placed-building-list"></div>
+        </div>
+      </section>
+
       <section class="editor-panel" data-editor-panel="animals">
         <p class="editor-hint">Escolha um animal e clique no mapa para posicioná-lo com snap. Depois ele caminhará sozinho.</p>
         <div id="animal-library" class="animal-library"></div>
@@ -110,7 +122,7 @@
       </section>
 
       <section class="editor-panel" data-editor-panel="maps">
-        <p class="editor-hint">Cada mapa mantém seus próprios tiles, bloqueios, construções e animais.</p>
+        <p class="editor-hint">Cada mapa mantém seus próprios tiles, bloqueios, construções, móveis e animais.</p>
         <div id="map-library" class="map-library"></div>
         <button id="create-map" class="create-map-button" type="button">+ Criar novo mapa</button>
       </section>
@@ -133,6 +145,6 @@
       </div>
     </nav>
 
-    <script src="game.js?v=18"></script>
+    <script src="game.js?v=19"></script>
   </body>
 </html>

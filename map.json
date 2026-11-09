@@ -6,7 +6,7 @@
       "id": "initial-scene",
       "name": "Cena inicial",
       "data": {
-        "version": 5,
+        "version": 6,
         "tileSize": 32,
         "dimensions": { "columns": 65, "rows": 30 },
         "maps": {
@@ -17,14 +17,16 @@
             "buildings": [
               { "id": "default-cabin-01", "asset": "cabin-01", "x": 32, "y": 32 }
             ],
-            "animals": []
+            "animals": [],
+            "furniture": []
           },
           "house": {
             "defaultTile": null,
             "tiles": {},
             "blocked": [],
             "buildings": [],
-            "animals": []
+            "animals": [],
+            "furniture": []
           }
         }
       }

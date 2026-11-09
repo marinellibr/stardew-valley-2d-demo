@@ -11,6 +11,8 @@ const outdoorBuildingsLayer = document.querySelector("#outdoor-buildings-layer")
 const houseBuildingsLayer = document.querySelector("#house-buildings-layer");
 const outdoorAnimalsLayer = document.querySelector("#outdoor-animals-layer");
 const houseAnimalsLayer = document.querySelector("#house-animals-layer");
+const outdoorFurnitureLayer = document.querySelector("#outdoor-furniture-layer");
+const houseFurnitureLayer = document.querySelector("#house-furniture-layer");
 const mapEditor = document.querySelector("#map-editor");
 const selectedTileLabel = document.querySelector("#selected-tile-label");
 const toggleTileBlock = document.querySelector("#toggle-tile-block");
@@ -21,6 +23,9 @@ const mapLibraryElement = document.querySelector("#map-library");
 const animalLibrary = document.querySelector("#animal-library");
 const placedAnimalList = document.querySelector("#placed-animal-list");
 const placedAnimalsTitle = document.querySelector("#placed-animals-title");
+const furnitureLibrary = document.querySelector("#furniture-library");
+const placedFurnitureList = document.querySelector("#placed-furniture-list");
+const placedFurnitureTitle = document.querySelector("#placed-furniture-title");
 const eraseTileTool = document.querySelector("#erase-tile-tool");
 const restoreTileTool = document.querySelector("#restore-tile-tool");
 
@@ -46,7 +51,6 @@ const SHEETS = {
   "farm-buildings": { file: "assets/tilesets/farm-buildings.png", width: 919, height: 412 },
   cabins: { file: "assets/tilesets/cabins.png", width: 240, height: 784 },
   farmhouse: { file: "assets/tilesets/farmhouse.png", width: 192, height: 352 },
-  furniture: { file: "assets/tilesets/furniture.png", width: 980, height: 1488 },
 };
 
 const BUILDING_ASSETS = [
@@ -101,6 +105,24 @@ const ANIMAL_ASSETS = [
   return { ...asset, image };
 });
 
+const furnitureSheet = new Image();
+furnitureSheet.src = "assets/tilesets/furniture.png";
+
+// Cada entrada descreve o retângulo completo de um móvel, nunca um tile isolado.
+const FURNITURE_ASSETS = [
+  { name: "oak-chair", label: "Cadeira de carvalho", x: 0, y: 0, width: 16, height: 32 },
+  { name: "mahogany-chair", label: "Cadeira de mogno", x: 128, y: 0, width: 16, height: 32 },
+  { name: "blue-armchair", label: "Poltrona azul", x: 0, y: 144, width: 32, height: 32 },
+  { name: "red-armchair", label: "Poltrona vermelha", x: 96, y: 144, width: 32, height: 32 },
+  { name: "green-armchair", label: "Poltrona verde", x: 192, y: 144, width: 32, height: 32 },
+  { name: "orange-armchair", label: "Poltrona laranja", x: 288, y: 144, width: 32, height: 32 },
+  { name: "blue-armchair-side", label: "Poltrona azul lateral", x: 32, y: 144, width: 32, height: 32 },
+  { name: "red-armchair-side", label: "Poltrona vermelha lateral", x: 128, y: 144, width: 32, height: 32 },
+  { name: "green-armchair-side", label: "Poltrona verde lateral", x: 224, y: 144, width: 32, height: 32 },
+  { name: "orange-armchair-side", label: "Poltrona laranja lateral", x: 320, y: 144, width: 32, height: 32 },
+  { name: "brown-armchair", label: "Poltrona marrom", x: 384, y: 144, width: 32, height: 32 },
+];
+
 const LEGACY_CABIN_BLOCKED = [
   "2,1", "3,1", "4,1",
   "1,2", "2,2", "3,2", "4,2", "5,2",
@@ -111,7 +133,7 @@ const LEGACY_CABIN_BLOCKED = [
 ];
 
 const DEFAULT_MAP = {
-  version: 5,
+  version: 6,
   tileSize: TILE_SIZE,
   dimensions: { columns: DEFAULT_MAP_COLUMNS, rows: DEFAULT_MAP_ROWS },
   maps: {
@@ -121,14 +143,16 @@ const DEFAULT_MAP = {
       blocked: [],
       buildings: [{ id: "default-cabin-01", asset: "cabin-01", x: TILE_SIZE, y: TILE_SIZE }],
       animals: [],
+      furniture: [],
     },
-    house: { defaultTile: null, tiles: {}, blocked: [], buildings: [], animals: [] },
+    house: { defaultTile: null, tiles: {}, blocked: [], buildings: [], animals: [], furniture: [] },
   },
 };
 
 function migrateSingleMap(parsed) {
   Object.values(parsed.maps).forEach((scene) => {
     scene.animals ??= [];
+    scene.furniture ??= [];
   });
   if ((parsed.version ?? 1) < 2) {
     const legacyCollision = new Set(LEGACY_CABIN_BLOCKED);
@@ -156,11 +180,16 @@ function migrateSingleMap(parsed) {
         animal.x *= scaleRatio;
         animal.y *= scaleRatio;
       });
+      scene.furniture.forEach((item) => {
+        item.x *= scaleRatio;
+        item.y *= scaleRatio;
+      });
     });
     parsed.tileSize = TILE_SIZE;
-    parsed.version = 5;
+    parsed.version = 6;
   }
   parsed.dimensions = { columns: DEFAULT_MAP_COLUMNS, rows: DEFAULT_MAP_ROWS };
+  parsed.version = 6;
   return parsed;
 }
 
@@ -201,6 +230,7 @@ let mapState = initialMapEntry.data;
 let selectedMapTile = null;
 let buildingPlacement = null;
 let animalPlacement = null;
+let furniturePlacement = null;
 let tileBrush = null;
 let suppressNextTileClick = false;
 let currentScene = "outdoor";
@@ -282,9 +312,11 @@ function emptyMapState() {
   const empty = JSON.parse(JSON.stringify(DEFAULT_MAP));
   empty.maps.outdoor.buildings = [];
   empty.maps.outdoor.animals = [];
+  empty.maps.outdoor.furniture = [];
   empty.maps.outdoor.blocked = [];
   empty.maps.house.buildings = [];
   empty.maps.house.animals = [];
+  empty.maps.house.furniture = [];
   empty.maps.house.blocked = [];
   return empty;
 }
@@ -302,6 +334,7 @@ function renderMapLibrary() {
     const editedTileCount = Object.keys(outdoor.tiles).length;
     const buildingCount = outdoor.buildings.length;
     const animalCount = outdoor.animals.length;
+    const furnitureCount = outdoor.furniture.length;
 
     card.className = "map-card";
     card.classList.toggle("is-active", entry.id === activeMapId);
@@ -310,7 +343,7 @@ function renderMapLibrary() {
     selectButton.setAttribute("aria-label", `Abrir ${entry.name}`);
     copy.className = "map-card-copy";
     name.textContent = entry.name;
-    summary.textContent = `${editedTileCount} tiles · ${buildingCount} construções · ${animalCount} animais`;
+    summary.textContent = `${editedTileCount} tiles · ${buildingCount} construções · ${furnitureCount} móveis · ${animalCount} animais`;
     copy.append(name, summary);
     deleteButton.className = "delete-map-button";
     deleteButton.type = "button";
@@ -544,6 +577,103 @@ function renderPlacedBuildingList(scene = currentScene) {
   placedBuildingList.replaceChildren(fragment);
 }
 
+function drawFurniture(target, asset) {
+  const drawingContext = target.getContext("2d");
+  drawingContext.imageSmoothingEnabled = false;
+  drawingContext.clearRect(0, 0, asset.width, asset.height);
+  if (!furnitureSheet.complete || !furnitureSheet.naturalWidth) return;
+  drawingContext.drawImage(
+    furnitureSheet,
+    asset.x,
+    asset.y,
+    asset.width,
+    asset.height,
+    0,
+    0,
+    asset.width,
+    asset.height,
+  );
+}
+
+function makeFurnitureCanvas(asset, className = "furniture-canvas") {
+  const itemCanvas = document.createElement("canvas");
+  itemCanvas.className = className;
+  itemCanvas.width = asset.width;
+  itemCanvas.height = asset.height;
+  itemCanvas.style.width = `${asset.width}px`;
+  itemCanvas.style.height = `${asset.height}px`;
+  itemCanvas.style.transform = `scale(${SHEET_SCALE})`;
+  itemCanvas.style.transformOrigin = "top left";
+  drawFurniture(itemCanvas, asset);
+  if (!furnitureSheet.complete) {
+    furnitureSheet.addEventListener("load", () => drawFurniture(itemCanvas, asset), { once: true });
+  }
+  return itemCanvas;
+}
+
+function renderPlacedFurniture(scene) {
+  const layer = scene === "house" ? houseFurnitureLayer : outdoorFurnitureLayer;
+  const fragment = document.createDocumentFragment();
+  layer.replaceChildren();
+  sceneMap(scene).furniture.forEach((item) => {
+    const asset = FURNITURE_ASSETS.find((candidate) => candidate.name === item.asset);
+    if (!asset) return;
+    const itemCanvas = makeFurnitureCanvas(asset);
+    itemCanvas.style.left = `${item.x}px`;
+    itemCanvas.style.top = `${item.y}px`;
+    fragment.append(itemCanvas);
+  });
+  layer.append(fragment);
+  renderPlacedFurnitureList(scene);
+}
+
+function removePlacedFurniture(scene, id) {
+  const items = sceneMap(scene).furniture;
+  const index = items.findIndex((item) => item.id === id);
+  if (index < 0) return;
+  items.splice(index, 1);
+  persistMap();
+  renderPlacedFurniture(scene);
+}
+
+function renderPlacedFurnitureList(scene = currentScene) {
+  placedFurnitureTitle.textContent = `Móveis colocados · ${scene === "house" ? "casa" : "exterior"}`;
+  const items = sceneMap(scene).furniture;
+  if (items.length === 0) {
+    const empty = document.createElement("p");
+    empty.className = "placed-building-empty";
+    empty.textContent = "Nenhum móvel nesta camada.";
+    placedFurnitureList.replaceChildren(empty);
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+  items.forEach((item) => {
+    const asset = FURNITURE_ASSETS.find((candidate) => candidate.name === item.asset);
+    if (!asset) return;
+    const row = document.createElement("div");
+    const thumbnail = makeFurnitureCanvas(asset);
+    const info = document.createElement("div");
+    const name = document.createElement("strong");
+    const position = document.createElement("span");
+    const removeButton = document.createElement("button");
+    row.className = "placed-building-row";
+    thumbnail.style.position = "static";
+    thumbnail.style.transform = "none";
+    info.className = "placed-building-info";
+    name.textContent = asset.label;
+    position.textContent = `tile ${item.x / TILE_SIZE},${item.y / TILE_SIZE}`;
+    removeButton.className = "remove-building-button";
+    removeButton.type = "button";
+    removeButton.textContent = "Remover";
+    removeButton.addEventListener("click", () => removePlacedFurniture(scene, item.id));
+    info.append(name, position);
+    row.append(thumbnail, info, removeButton);
+    fragment.append(row);
+  });
+  placedFurnitureList.replaceChildren(fragment);
+}
+
 const ANIMAL_DIRECTIONS = ["down", "left", "up", "right"];
 const ANIMAL_VECTORS = {
   down: { x: 0, y: 1 },
@@ -689,6 +819,8 @@ function buildTileGrid() {
   outdoorBuildingsLayer.style.height = `${rows * TILE_SIZE}px`;
   outdoorAnimalsLayer.style.width = `${columns * TILE_SIZE}px`;
   outdoorAnimalsLayer.style.height = `${rows * TILE_SIZE}px`;
+  outdoorFurnitureLayer.style.width = `${columns * TILE_SIZE}px`;
+  outdoorFurnitureLayer.style.height = `${rows * TILE_SIZE}px`;
 
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < columns; x += 1) {
@@ -780,6 +912,7 @@ function renderPosition() {
   outdoorMapLayer.style.transform = worldTransform;
   outdoorBuildingsLayer.style.transform = worldTransform;
   outdoorAnimalsLayer.style.transform = worldTransform;
+  outdoorFurnitureLayer.style.transform = worldTransform;
   tileGrid.style.transform = worldTransform;
   canvas.style.transform = `translate3d(${player.x - camera.x}px, ${player.y - camera.y}px, 0)`;
   game.style.backgroundPosition = `${-camera.x}px ${-camera.y}px`;
@@ -934,6 +1067,7 @@ function spawnPlayerOutsideDoor() {
 function showScene(scene, { pushRoute = true } = {}) {
   cancelBuildingPlacement();
   cancelAnimalPlacement();
+  cancelFurniturePlacement();
   cancelTileBrush();
   selectedMapTile = null;
   mapEditor.classList.remove("is-open");
@@ -949,10 +1083,12 @@ function showScene(scene, { pushRoute = true } = {}) {
     buildHouseTileGrid();
     renderPlacedBuildings("house");
     renderPlacedAnimals("house");
+    renderPlacedFurniture("house");
     spawnPlayerInHouse();
   } else {
     renderPlacedBuildings("outdoor");
     renderPlacedAnimals("outdoor");
+    renderPlacedFurniture("outdoor");
     spawnPlayerOutsideDoor();
   }
 }
@@ -975,7 +1111,7 @@ function updateBlockButton() {
 }
 
 function selectMapTile(scene, x, y) {
-  if (!editorEnabled() || buildingPlacement || animalPlacement) return;
+  if (!editorEnabled() || buildingPlacement || animalPlacement || furniturePlacement) return;
   selectedMapTile = { scene, x, y };
   selectedTileLabel.textContent = `${scene} · ${x},${y}`;
   mapEditor.classList.add("is-open");
@@ -984,6 +1120,7 @@ function selectMapTile(scene, x, y) {
   updateBlockButton();
   renderPlacedBuildingList(scene);
   renderPlacedAnimalList(scene);
+  renderPlacedFurnitureList(scene);
 }
 
 function cancelTileBrush() {
@@ -997,6 +1134,7 @@ function cancelTileBrush() {
 function beginTileBrush(tileDefinition, activeButton = null) {
   cancelBuildingPlacement();
   cancelAnimalPlacement();
+  cancelFurniturePlacement();
   cancelTileBrush();
   const preview = document.createElement("div");
   preview.className = "tile-brush-preview";
@@ -1097,6 +1235,7 @@ function cancelBuildingPlacement() {
 function beginBuildingPlacement(asset, button) {
   cancelBuildingPlacement();
   cancelAnimalPlacement();
+  cancelFurniturePlacement();
   cancelTileBrush();
   const preview = document.createElement("img");
   preview.className = "building-preview";
@@ -1177,6 +1316,87 @@ function confirmBuildingPlacement() {
   return true;
 }
 
+function cancelFurniturePlacement() {
+  furniturePlacement?.preview.remove();
+  furniturePlacement = null;
+  furnitureLibrary.querySelectorAll(".furniture-option").forEach((button) => {
+    button.classList.remove("is-active");
+  });
+}
+
+function beginFurniturePlacement(asset, button) {
+  cancelBuildingPlacement();
+  cancelAnimalPlacement();
+  cancelFurniturePlacement();
+  cancelTileBrush();
+  const preview = makeFurnitureCanvas(asset, "furniture-preview");
+  const container = currentScene === "house" ? houseRoom : game;
+  container.append(preview);
+  button.classList.add("is-active");
+  furniturePlacement = { asset, preview, scene: currentScene, x: 0, y: 0, valid: false };
+}
+
+function renderFurnitureLibrary() {
+  const fragment = document.createDocumentFragment();
+  FURNITURE_ASSETS.forEach((asset) => {
+    const button = document.createElement("button");
+    const preview = makeFurnitureCanvas(asset);
+    const label = document.createElement("span");
+    const previewScale = Math.min(PICKER_SCALE, 96 / asset.width, 64 / asset.height);
+    button.className = "furniture-option";
+    button.type = "button";
+    preview.style.position = "static";
+    preview.style.width = `${asset.width * previewScale}px`;
+    preview.style.height = `${asset.height * previewScale}px`;
+    preview.style.transform = "none";
+    label.textContent = asset.label;
+    button.append(preview, label);
+    button.addEventListener("click", () => beginFurniturePlacement(asset, button));
+    fragment.append(button);
+  });
+  furnitureLibrary.replaceChildren(fragment);
+}
+
+function updateFurniturePreview(event) {
+  if (!furniturePlacement || furniturePlacement.scene !== currentScene) return;
+  const container = currentScene === "house" ? houseRoom : game;
+  const rect = container.getBoundingClientRect();
+  const width = furniturePlacement.asset.width * SHEET_SCALE;
+  const height = furniturePlacement.asset.height * SHEET_SCALE;
+  const isOutdoor = currentScene === "outdoor";
+  const world = isOutdoor ? outdoorWorldSize() : { width: rect.width, height: rect.height };
+  const rawX = event.clientX - rect.left + (isOutdoor ? camera.x : 0);
+  const rawY = event.clientY - rect.top + (isOutdoor ? camera.y : 0);
+  const maxX = Math.max(0, Math.floor((world.width - width) / TILE_SIZE) * TILE_SIZE);
+  const maxY = Math.max(0, Math.floor((world.height - height) / TILE_SIZE) * TILE_SIZE);
+  const x = Math.max(0, Math.min(maxX, Math.floor(rawX / TILE_SIZE) * TILE_SIZE));
+  const y = Math.max(0, Math.min(maxY, Math.floor(rawY / TILE_SIZE) * TILE_SIZE));
+  furniturePlacement.x = x;
+  furniturePlacement.y = y;
+  furniturePlacement.valid = (
+    event.clientX >= rect.left && event.clientX <= rect.right &&
+    event.clientY >= rect.top && event.clientY <= rect.bottom
+  );
+  furniturePlacement.preview.style.display = furniturePlacement.valid ? "block" : "none";
+  furniturePlacement.preview.style.left = `${x - (isOutdoor ? camera.x : 0)}px`;
+  furniturePlacement.preview.style.top = `${y - (isOutdoor ? camera.y : 0)}px`;
+}
+
+function confirmFurniturePlacement() {
+  if (!furniturePlacement?.valid) return false;
+  const scene = furniturePlacement.scene;
+  sceneMap(scene).furniture.push({
+    id: `${furniturePlacement.asset.name}-${Date.now()}`,
+    asset: furniturePlacement.asset.name,
+    x: furniturePlacement.x,
+    y: furniturePlacement.y,
+  });
+  persistMap();
+  cancelFurniturePlacement();
+  renderPlacedFurniture(scene);
+  return true;
+}
+
 function cancelAnimalPlacement() {
   animalPlacement?.preview.remove();
   animalPlacement = null;
@@ -1188,6 +1408,7 @@ function cancelAnimalPlacement() {
 function beginAnimalPlacement(asset, button) {
   cancelBuildingPlacement();
   cancelAnimalPlacement();
+  cancelFurniturePlacement();
   cancelTileBrush();
   const preview = makeAnimalCanvas(asset, "animal-preview");
   const container = currentScene === "house" ? houseRoom : game;
@@ -1434,10 +1655,11 @@ function attemptInteraction() {
 }
 
 window.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && (buildingPlacement || animalPlacement || tileBrush)) {
+  if (event.key === "Escape" && (buildingPlacement || animalPlacement || furniturePlacement || tileBrush)) {
     event.preventDefault();
     cancelBuildingPlacement();
     cancelAnimalPlacement();
+    cancelFurniturePlacement();
     cancelTileBrush();
     return;
   }
@@ -1585,7 +1807,7 @@ interactButton.addEventListener("contextmenu", (event) => event.preventDefault()
       return;
     }
     const tile = event.target.closest(".tile-coordinate");
-    if (!tile || buildingPlacement || animalPlacement || tileBrush) return;
+    if (!tile || buildingPlacement || animalPlacement || furniturePlacement || tileBrush) return;
     selectMapTile(tile.dataset.scene, Number(tile.dataset.x), Number(tile.dataset.y));
   });
 });
@@ -1606,6 +1828,7 @@ document.querySelector("#close-map-editor").addEventListener("click", () => {
   mapEditor.classList.remove("is-open");
   cancelBuildingPlacement();
   cancelAnimalPlacement();
+  cancelFurniturePlacement();
   cancelTileBrush();
 });
 
@@ -1622,10 +1845,12 @@ document.querySelectorAll(".editor-tab").forEach((tab) => {
     });
     if (target === "buildings") renderPlacedBuildingList(currentScene);
     if (target === "animals") renderPlacedAnimalList(currentScene);
+    if (target === "furniture") renderPlacedFurnitureList(currentScene);
     if (target === "maps") renderMapLibrary();
     if (target !== "tiles") cancelTileBrush();
     if (target !== "buildings") cancelBuildingPlacement();
     if (target !== "animals") cancelAnimalPlacement();
+    if (target !== "furniture") cancelFurniturePlacement();
   });
 });
 
@@ -1642,6 +1867,7 @@ document.querySelectorAll("#tileset-accordions details").forEach((details) => {
 game.addEventListener("pointermove", (event) => {
   updateBuildingPreview(event);
   updateAnimalPreview(event);
+  updateFurniturePreview(event);
   updateTileBrushPreview(event);
   if (tileBrush?.painting) paintWithTileBrush();
 });
@@ -1661,6 +1887,14 @@ game.addEventListener(
     if (animalPlacement) {
       updateAnimalPreview(event);
       if (!confirmAnimalPlacement()) return;
+      suppressNextTileClick = true;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    if (furniturePlacement) {
+      updateFurniturePreview(event);
+      if (!confirmFurniturePlacement()) return;
       suppressNextTileClick = true;
       event.preventDefault();
       event.stopPropagation();
@@ -1725,12 +1959,15 @@ spriteSheet.addEventListener("load", () => {
   persistMap();
   renderBuildingLibrary();
   renderAnimalLibrary();
+  renderFurnitureLibrary();
   renderMapLibrary();
   buildTileGrid();
   renderPlacedBuildings("outdoor");
   renderPlacedBuildings("house");
   renderPlacedAnimals("outdoor");
   renderPlacedAnimals("house");
+  renderPlacedFurniture("outdoor");
+  renderPlacedFurniture("house");
   currentScene = routeIsHouse() ? "house" : "outdoor";
   renderPlacedBuildingList(currentScene);
   document.body.classList.toggle("house-route", currentScene === "house");
