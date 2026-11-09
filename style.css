@@ -613,6 +613,44 @@ body.house-route .house-scene {
   image-rendering: pixelated;
 }
 
+.tile-source-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  margin-bottom: 9px;
+}
+
+.tile-source-tab {
+  padding: 8px 5px;
+  color: #d8b982;
+  background: #302019;
+  border: 1px solid #60402e;
+  border-radius: 7px;
+  font-size: 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.tile-source-tab.is-active {
+  color: #efffd9;
+  background: #31522f;
+  border-color: #8ad76a;
+}
+
+.tile-source-panel {
+  display: none;
+}
+
+.tile-source-panel.is-active {
+  display: block;
+}
+
+.environment-tileset-picker {
+  max-height: 390px;
+  border: 1px solid #6e452c;
+  border-radius: 8px;
+}
+
 .tileset-accordions details {
   background: #39251c;
   border: 1px solid #6e452c;

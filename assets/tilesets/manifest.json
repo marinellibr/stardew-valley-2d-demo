@@ -36,6 +36,30 @@
       "width": 512,
       "height": 256,
       "categories": ["flooring", "paths", "interior-surfaces"]
+    },
+    "environment-crops": {
+      "file": "environment-crops.png",
+      "width": 256,
+      "height": 832,
+      "categories": ["crops", "plants", "flowers"]
+    },
+    "environment-bushes": {
+      "file": "environment-bushes.png",
+      "width": 128,
+      "height": 352,
+      "categories": ["bushes", "foliage"]
+    },
+    "environment-fruit-trees": {
+      "file": "environment-fruit-trees.png",
+      "width": 432,
+      "height": 720,
+      "categories": ["fruit-trees", "trees", "saplings"]
+    },
+    "environment-grass": {
+      "file": "environment-grass.png",
+      "width": 66,
+      "height": 240,
+      "categories": ["grass", "weeds"]
     }
   },
   "extractedTiles": {

@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <title>Fazendeiro 2D — Protótipo</title>
-    <link rel="stylesheet" href="style.css?v=24" />
+    <link rel="stylesheet" href="style.css?v=25" />
   </head>
   <body>
     <main id="game" aria-label="Área do jogo">
@@ -87,13 +87,26 @@
             <span><strong>Restaurar</strong><small>Volta ao piso original</small></span>
           </button>
         </div>
-        <div id="tileset-accordions" class="tileset-accordions">
-          <details data-sheet="outdoors-spring"><summary>outdoors-spring.png</summary><div class="tileset-picker"></div></details>
-          <details data-sheet="flooring"><summary>flooring.png</summary><div class="tileset-picker"></div></details>
-          <details data-sheet="farm-buildings"><summary>farm-buildings.png</summary><div class="tileset-picker"></div></details>
-          <details data-sheet="cabins"><summary>cabins.png</summary><div class="tileset-picker"></div></details>
-          <details data-sheet="farmhouse"><summary>farmhouse.png</summary><div class="tileset-picker"></div></details>
+        <div class="tile-source-tabs" role="tablist" aria-label="Folhas de tiles">
+          <button class="tile-source-tab is-active" type="button" data-tile-source-tab="terrain" aria-selected="true">Terreno</button>
+          <button class="tile-source-tab" type="button" data-tile-source-tab="crops" aria-selected="false">Crops</button>
+          <button class="tile-source-tab" type="button" data-tile-source-tab="bushes" aria-selected="false">Bushes</button>
+          <button class="tile-source-tab" type="button" data-tile-source-tab="fruit-trees" aria-selected="false">Fruit Trees</button>
+          <button class="tile-source-tab" type="button" data-tile-source-tab="grass" aria-selected="false">Grass</button>
         </div>
+        <div class="tile-source-panel is-active" data-tile-source-panel="terrain">
+          <div id="tileset-accordions" class="tileset-accordions">
+            <details data-sheet="outdoors-spring"><summary>outdoors-spring.png</summary><div class="tileset-picker"></div></details>
+            <details data-sheet="flooring"><summary>flooring.png</summary><div class="tileset-picker"></div></details>
+            <details data-sheet="farm-buildings"><summary>farm-buildings.png</summary><div class="tileset-picker"></div></details>
+            <details data-sheet="cabins"><summary>cabins.png</summary><div class="tileset-picker"></div></details>
+            <details data-sheet="farmhouse"><summary>farmhouse.png</summary><div class="tileset-picker"></div></details>
+          </div>
+        </div>
+        <div class="tile-source-panel" data-tile-source-panel="crops" data-sheet="environment-crops"><div class="tileset-picker environment-tileset-picker"></div></div>
+        <div class="tile-source-panel" data-tile-source-panel="bushes" data-sheet="environment-bushes"><div class="tileset-picker environment-tileset-picker"></div></div>
+        <div class="tile-source-panel" data-tile-source-panel="fruit-trees" data-sheet="environment-fruit-trees"><div class="tileset-picker environment-tileset-picker"></div></div>
+        <div class="tile-source-panel" data-tile-source-panel="grass" data-sheet="environment-grass"><div class="tileset-picker environment-tileset-picker"></div></div>
       </section>
 
       <section class="editor-panel" data-editor-panel="buildings">
@@ -167,6 +180,6 @@
       </div>
     </nav>
 
-    <script src="game.js?v=24"></script>
+    <script src="game.js?v=25"></script>
   </body>
 </html>

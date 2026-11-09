@@ -101,6 +101,10 @@ const SHEETS = {
   "farm-buildings": { file: "assets/tilesets/farm-buildings.png", width: 919, height: 412 },
   cabins: { file: "assets/tilesets/cabins.png", width: 240, height: 784 },
   farmhouse: { file: "assets/tilesets/farmhouse.png", width: 192, height: 352 },
+  "environment-crops": { file: "assets/tilesets/environment-crops.png", width: 256, height: 832 },
+  "environment-bushes": { file: "assets/tilesets/environment-bushes.png", width: 128, height: 352 },
+  "environment-fruit-trees": { file: "assets/tilesets/environment-fruit-trees.png", width: 432, height: 720 },
+  "environment-grass": { file: "assets/tilesets/environment-grass.png", width: 66, height: 240 },
 };
 
 const BUILDING_ASSETS = [
@@ -2184,6 +2188,22 @@ document.addEventListener("pointercancel", () => {
 document.querySelectorAll("#tileset-accordions details").forEach((details) => {
   details.addEventListener("toggle", () => {
     if (details.open) buildTilesetPicker(details);
+  });
+});
+
+document.querySelectorAll(".tile-source-tab").forEach((tab) => {
+  tab.addEventListener("click", () => {
+    const target = tab.dataset.tileSourceTab;
+    document.querySelectorAll(".tile-source-tab").forEach((option) => {
+      const active = option === tab;
+      option.classList.toggle("is-active", active);
+      option.setAttribute("aria-selected", String(active));
+    });
+    document.querySelectorAll(".tile-source-panel").forEach((panel) => {
+      const active = panel.dataset.tileSourcePanel === target;
+      panel.classList.toggle("is-active", active);
+      if (active && panel.dataset.sheet) buildTilesetPicker(panel);
+    });
   });
 });
 
