@@ -23,9 +23,9 @@ spriteSheet.src = "assets/alex-sprites.png";
 const FRAME_WIDTH = 16;
 const FRAME_HEIGHT = 32;
 const FRAMES_PER_DIRECTION = 4;
-const TILE_SIZE = 64;
+const TILE_SIZE = 16;
 const STORAGE_KEY = "stardew-map-editor-v1";
-const SHEET_SCALE = 4;
+const SHEET_SCALE = 1;
 const PICKER_SCALE = 2;
 
 const SHEETS = {
@@ -87,14 +87,14 @@ const LEGACY_CABIN_BLOCKED = [
 ];
 
 const DEFAULT_MAP = {
-  version: 2,
+  version: 3,
   tileSize: TILE_SIZE,
   maps: {
     outdoor: {
       defaultTile: { sheet: "outdoors-spring", x: 32, y: 208 },
       tiles: {},
       blocked: [],
-      buildings: [{ id: "default-cabin-01", asset: "cabin-01", x: 64, y: 64 }],
+      buildings: [{ id: "default-cabin-01", asset: "cabin-01", x: 16, y: 16 }],
     },
     house: { defaultTile: null, tiles: {}, blocked: [], buildings: [] },
   },
@@ -115,6 +115,17 @@ function migrateSingleMap(parsed) {
       });
     }
     parsed.version = 2;
+  }
+  if (parsed.tileSize !== TILE_SIZE) {
+    const scaleRatio = TILE_SIZE / (parsed.tileSize || 64);
+    Object.values(parsed.maps).forEach((scene) => {
+      scene.buildings.forEach((building) => {
+        building.x *= scaleRatio;
+        building.y *= scaleRatio;
+      });
+    });
+    parsed.tileSize = TILE_SIZE;
+    parsed.version = 3;
   }
   return parsed;
 }
@@ -175,7 +186,7 @@ const keys = new Set();
 const player = {
   x: 0,
   y: 0,
-  speed: 230,
+  speed: 58,
   direction: "down",
   moving: false,
   frame: 0,

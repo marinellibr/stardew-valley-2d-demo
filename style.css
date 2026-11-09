@@ -32,7 +32,7 @@ body {
   background-color: #43bd21;
   background-image: url("assets/tiles/terrain/short-grass.png");
   background-repeat: repeat;
-  background-size: 64px 64px;
+  background-size: 16px 16px;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   touch-action: none;
@@ -68,8 +68,8 @@ body {
 }
 
 .map-tile-cell {
-  width: 64px;
-  height: 64px;
+  width: 16px;
+  height: 16px;
   background-repeat: no-repeat;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
@@ -94,23 +94,6 @@ body {
   filter: drop-shadow(0 0 1px #fff);
 }
 
-.world-building {
-  position: absolute;
-  z-index: 1;
-  display: block;
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
-  pointer-events: none;
-  -webkit-user-drag: none;
-}
-
-#cabin-01 {
-  left: 64px;
-  top: 64px;
-  width: 320px;
-  height: 448px;
-}
-
 .house-scene {
   position: absolute;
   inset: 0;
@@ -124,14 +107,14 @@ body {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 512px;
-  height: 384px;
+  width: 128px;
+  height: 96px;
   overflow: hidden;
   background: #5a2e1d;
-  border: 4px solid #2a1410;
+  border: 1px solid #2a1410;
   box-shadow:
-    inset 0 0 0 12px #8b4c27,
-    0 0 0 4px #000;
+    inset 0 0 0 3px #8b4c27,
+    0 0 0 1px #000;
   transform: translate(-50%, -50%);
   image-rendering: pixelated;
   image-rendering: crisp-edges;
@@ -147,34 +130,34 @@ body {
 
 .house-room::before {
   inset: 0 0 auto;
-  height: 64px;
+  height: 16px;
   background:
-    linear-gradient(#3b2019 0 10px, transparent 10px),
-    repeating-linear-gradient(90deg, #7e3f22 0 31px, #4a2418 31px 34px, #9d5830 34px 64px);
-  box-shadow: inset 0 -8px 0 #2f1712;
+    linear-gradient(#3b2019 0 3px, transparent 3px),
+    repeating-linear-gradient(90deg, #7e3f22 0 8px, #4a2418 8px 9px, #9d5830 9px 16px);
+  box-shadow: inset 0 -2px 0 #2f1712;
 }
 
 .house-room::after {
-  inset: 64px 0 0;
-  border-right: 64px solid #60311f;
-  border-bottom: 64px solid #60311f;
-  border-left: 64px solid #60311f;
+  inset: 16px 0 0;
+  border-right: 16px solid #60311f;
+  border-bottom: 16px solid #60311f;
+  border-left: 16px solid #60311f;
   box-shadow:
-    inset 8px 0 0 #8b4c27,
-    inset -8px 0 0 #3a1c15,
-    inset 0 -8px 0 #321812;
+    inset 2px 0 0 #8b4c27,
+    inset -2px 0 0 #3a1c15,
+    inset 0 -2px 0 #321812;
 }
 
 .house-floor {
   position: absolute;
-  inset: 64px 64px 64px;
+  inset: 16px 16px 16px;
   z-index: 1;
   background-color: #b66b32;
   background-image:
-    linear-gradient(90deg, rgb(88 42 24 / 45%) 2px, transparent 2px),
-    linear-gradient(rgb(255 190 92 / 22%) 2px, transparent 2px);
-  background-size: 64px 32px, 64px 32px;
-  box-shadow: inset 0 0 0 4px #78401f;
+    linear-gradient(90deg, rgb(88 42 24 / 45%) 1px, transparent 1px),
+    linear-gradient(rgb(255 190 92 / 22%) 1px, transparent 1px);
+  background-size: 16px 8px, 16px 8px;
+  box-shadow: inset 0 0 0 1px #78401f;
 }
 
 .house-map-layer {
@@ -191,43 +174,43 @@ body {
   z-index: 3;
   background-image: url("assets/tilesets/farmhouse.png");
   background-repeat: no-repeat;
-  background-size: 768px 1408px;
+  background-size: 192px 352px;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
 }
 
 .house-tv {
-  top: 72px;
-  left: 72px;
-  width: 144px;
-  height: 144px;
-  background-position: -288px -336px;
+  top: 18px;
+  left: 18px;
+  width: 36px;
+  height: 36px;
+  background-position: -72px -84px;
 }
 
 .house-bed {
-  top: 72px;
-  right: 72px;
-  width: 144px;
-  height: 192px;
-  background-position: -384px -48px;
+  top: 18px;
+  right: 18px;
+  width: 36px;
+  height: 48px;
+  background-position: -96px -12px;
 }
 
 .house-exit {
   position: absolute;
-  left: 224px;
+  left: 56px;
   bottom: 0;
   z-index: 4;
   display: grid;
-  width: 64px;
-  height: 64px;
+  width: 16px;
+  height: 16px;
   place-items: end center;
-  padding-bottom: 7px;
+  padding-bottom: 2px;
   color: #ffe9a8;
-  background: linear-gradient(90deg, #3a1913 0 8px, #9a4f27 8px 56px, #3a1913 56px);
+  background: linear-gradient(90deg, #3a1913 0 2px, #9a4f27 2px 14px, #3a1913 14px);
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
-  font-size: 9px;
+  font-size: 3px;
   font-weight: 900;
-  box-shadow: inset 0 7px 0 #2b120e;
+  box-shadow: inset 0 2px 0 #2b120e;
 }
 
 .house-tile-grid {
@@ -235,21 +218,20 @@ body {
   inset: 0;
   z-index: 5;
   display: grid;
-  grid-template-columns: repeat(8, 64px);
-  grid-template-rows: repeat(6, 64px);
+  grid-template-columns: repeat(8, 16px);
+  grid-template-rows: repeat(6, 16px);
   pointer-events: auto;
 }
 
 .house-tile-grid .tile-coordinate {
-  width: 64px;
-  height: 64px;
+  width: 16px;
+  height: 16px;
 }
 
 body.house-route #game {
   background: #000;
 }
 
-body.house-route #cabin-01,
 body.house-route #tile-grid {
   display: none;
 }
@@ -260,12 +242,12 @@ body.house-route .house-scene {
 
 .tile-coordinate {
   position: relative;
-  width: 64px;
-  height: 64px;
+  width: 16px;
+  height: 16px;
   box-shadow: inset 0 0 0 1px #ff2a2a;
   color: #fff;
   font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
+  font-size: 3px;
   font-weight: 800;
   line-height: 1;
   text-shadow: 1px 1px 0 #8b0000, -1px -1px 0 #8b0000;
@@ -273,27 +255,27 @@ body.house-route .house-scene {
 }
 
 .tile-coordinate.is-selected {
-  box-shadow: inset 0 0 0 4px #28ff63;
+  box-shadow: inset 0 0 0 1px #28ff63;
 }
 
 .tile-coordinate.is-blocked::after {
   position: absolute;
-  right: 4px;
-  bottom: 4px;
-  padding: 2px 4px;
+  right: 1px;
+  bottom: 1px;
+  padding: 1px;
   color: #fff;
   background: #a40000;
-  border-radius: 3px;
+  border-radius: 1px;
   content: "×";
-  font-size: 12px;
+  font-size: 5px;
   line-height: 1;
 }
 
 .tile-coordinate span {
   position: absolute;
-  top: 4px;
-  left: 5px;
-  padding: 2px 3px;
+  top: 1px;
+  left: 1px;
+  padding: 1px;
   background: rgb(120 0 0 / 55%);
   border-radius: 2px;
 }
@@ -302,12 +284,12 @@ body.house-route .house-scene {
   position: absolute;
   left: 0;
   top: 0;
-  width: 64px;
-  height: 128px;
+  width: 16px;
+  height: 32px;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   transform: translate3d(0, 0, 0);
-  filter: drop-shadow(0 7px 0 rgb(0 0 0 / 14%));
+  filter: drop-shadow(0 2px 0 rgb(0 0 0 / 14%));
   will-change: transform;
   z-index: 3;
   pointer-events: none;
