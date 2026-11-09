@@ -23,10 +23,12 @@ spriteSheet.src = "assets/alex-sprites.png";
 const FRAME_WIDTH = 16;
 const FRAME_HEIGHT = 32;
 const FRAMES_PER_DIRECTION = 4;
-const TILE_SIZE = 16;
+const TILE_SIZE = 32;
 const STORAGE_KEY = "stardew-map-editor-v1";
-const SHEET_SCALE = 1;
+const SHEET_SCALE = 2;
 const PICKER_SCALE = 2;
+const DEFAULT_MAP_COLUMNS = 100;
+const DEFAULT_MAP_ROWS = 75;
 
 const SHEETS = {
   "outdoors-spring": { file: "assets/tilesets/outdoors-spring.png", width: 656, height: 1664 },
@@ -87,14 +89,15 @@ const LEGACY_CABIN_BLOCKED = [
 ];
 
 const DEFAULT_MAP = {
-  version: 3,
+  version: 4,
   tileSize: TILE_SIZE,
+  dimensions: { columns: DEFAULT_MAP_COLUMNS, rows: DEFAULT_MAP_ROWS },
   maps: {
     outdoor: {
       defaultTile: { sheet: "outdoors-spring", x: 32, y: 208 },
       tiles: {},
       blocked: [],
-      buildings: [{ id: "default-cabin-01", asset: "cabin-01", x: 16, y: 16 }],
+      buildings: [{ id: "default-cabin-01", asset: "cabin-01", x: 32, y: 32 }],
     },
     house: { defaultTile: null, tiles: {}, blocked: [], buildings: [] },
   },
@@ -125,8 +128,9 @@ function migrateSingleMap(parsed) {
       });
     });
     parsed.tileSize = TILE_SIZE;
-    parsed.version = 3;
+    parsed.version = 4;
   }
+  parsed.dimensions ??= { columns: DEFAULT_MAP_COLUMNS, rows: DEFAULT_MAP_ROWS };
   return parsed;
 }
 
@@ -186,13 +190,14 @@ const keys = new Set();
 const player = {
   x: 0,
   y: 0,
-  speed: 58,
+  speed: 116,
   direction: "down",
   moving: false,
   frame: 0,
   animationTime: 0,
   outfit: "green",
 };
+const camera = { x: 0, y: 0 };
 
 const controlKeys = new Set([
   "ArrowUp",
@@ -284,6 +289,7 @@ function activateMap(id) {
   buildTileGrid();
   buildHouseTileGrid();
   showScene("outdoor");
+  centerPlayer();
   persistMap();
   renderMapLibrary();
   selectedTileLabel.textContent = entry.name;
@@ -339,10 +345,12 @@ function mapDimensions(scene) {
       rows: Math.ceil(houseRoom.clientHeight / TILE_SIZE),
     };
   }
-  return {
-    columns: Math.ceil(game.clientWidth / TILE_SIZE),
-    rows: Math.ceil(game.clientHeight / TILE_SIZE),
-  };
+  return mapState.dimensions;
+}
+
+function outdoorWorldSize() {
+  const { columns, rows } = mapDimensions("outdoor");
+  return { width: columns * TILE_SIZE, height: rows * TILE_SIZE };
 }
 
 function renderMapLayer(scene) {
@@ -352,6 +360,8 @@ function renderMapLayer(scene) {
   layer.replaceChildren();
   layer.style.gridTemplateColumns = `repeat(${columns}, ${TILE_SIZE}px)`;
   layer.style.gridTemplateRows = `repeat(${rows}, ${TILE_SIZE}px)`;
+  layer.style.width = `${columns * TILE_SIZE}px`;
+  layer.style.height = `${rows * TILE_SIZE}px`;
 
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < columns; x += 1) {
@@ -457,13 +467,16 @@ function renderPlacedBuildingList(scene = currentScene) {
 }
 
 function buildTileGrid() {
-  const columns = Math.ceil(game.clientWidth / TILE_SIZE);
-  const rows = Math.ceil(game.clientHeight / TILE_SIZE);
+  const { columns, rows } = mapDimensions("outdoor");
   const fragment = document.createDocumentFragment();
 
   tileGrid.replaceChildren();
   tileGrid.style.gridTemplateColumns = `repeat(${columns}, ${TILE_SIZE}px)`;
   tileGrid.style.gridTemplateRows = `repeat(${rows}, ${TILE_SIZE}px)`;
+  tileGrid.style.width = `${columns * TILE_SIZE}px`;
+  tileGrid.style.height = `${rows * TILE_SIZE}px`;
+  outdoorBuildingsLayer.style.width = `${columns * TILE_SIZE}px`;
+  outdoorBuildingsLayer.style.height = `${rows * TILE_SIZE}px`;
 
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < columns; x += 1) {
@@ -522,8 +535,9 @@ function playerSize() {
 
 function centerPlayer() {
   const size = playerSize();
-  player.x = (game.clientWidth - size.width) / 2;
-  player.y = (game.clientHeight - size.height) / 2;
+  const world = outdoorWorldSize();
+  player.x = (world.width - size.width) / 2;
+  player.y = (world.height - size.height) / 2;
 
   if (currentScene === "outdoor" && positionTouchesBlockedTile(player.x, player.y)) {
     player.x = 0;
@@ -534,7 +548,26 @@ function centerPlayer() {
 }
 
 function renderPosition() {
-  canvas.style.transform = `translate3d(${player.x}px, ${player.y}px, 0)`;
+  game.scrollLeft = 0;
+  game.scrollTop = 0;
+  if (currentScene === "house") {
+    canvas.style.transform = `translate3d(${player.x}px, ${player.y}px, 0)`;
+    return;
+  }
+
+  const size = playerSize();
+  const world = outdoorWorldSize();
+  const maxCameraX = Math.max(0, world.width - game.clientWidth);
+  const maxCameraY = Math.max(0, world.height - game.clientHeight);
+  camera.x = Math.max(0, Math.min(maxCameraX, player.x + size.width / 2 - game.clientWidth / 2));
+  camera.y = Math.max(0, Math.min(maxCameraY, player.y + size.height / 2 - game.clientHeight / 2));
+
+  const worldTransform = `translate3d(${-camera.x}px, ${-camera.y}px, 0)`;
+  outdoorMapLayer.style.transform = worldTransform;
+  outdoorBuildingsLayer.style.transform = worldTransform;
+  tileGrid.style.transform = worldTransform;
+  canvas.style.transform = `translate3d(${player.x - camera.x}px, ${player.y - camera.y}px, 0)`;
+  game.style.backgroundPosition = `${-camera.x}px ${-camera.y}px`;
 }
 
 function inputAxis() {
@@ -558,6 +591,10 @@ function playerHitbox(x, y) {
 function positionTouchesBlockedTile(x, y) {
   // Apenas a base do personagem colide, simulando a área dos pés.
   const hitbox = playerHitbox(x, y);
+  const world = outdoorWorldSize();
+  if (hitbox.left < 0 || hitbox.right >= world.width || hitbox.top < 0 || hitbox.bottom >= world.height) {
+    return true;
+  }
 
   const startTileX = Math.floor(hitbox.left / TILE_SIZE);
   const endTileX = Math.floor(hitbox.right / TILE_SIZE);
@@ -823,10 +860,12 @@ function updateBuildingPreview(event) {
   const rect = container.getBoundingClientRect();
   const width = buildingPlacement.asset.width * SHEET_SCALE;
   const height = buildingPlacement.asset.height * SHEET_SCALE;
-  const rawX = event.clientX - rect.left;
-  const rawY = event.clientY - rect.top;
-  const maxX = Math.max(0, Math.floor((rect.width - width) / TILE_SIZE) * TILE_SIZE);
-  const maxY = Math.max(0, Math.floor((rect.height - height) / TILE_SIZE) * TILE_SIZE);
+  const isOutdoor = currentScene === "outdoor";
+  const world = isOutdoor ? outdoorWorldSize() : { width: rect.width, height: rect.height };
+  const rawX = event.clientX - rect.left + (isOutdoor ? camera.x : 0);
+  const rawY = event.clientY - rect.top + (isOutdoor ? camera.y : 0);
+  const maxX = Math.max(0, Math.floor((world.width - width) / TILE_SIZE) * TILE_SIZE);
+  const maxY = Math.max(0, Math.floor((world.height - height) / TILE_SIZE) * TILE_SIZE);
   const x = Math.max(0, Math.min(maxX, Math.floor(rawX / TILE_SIZE) * TILE_SIZE));
   const y = Math.max(0, Math.min(maxY, Math.floor(rawY / TILE_SIZE) * TILE_SIZE));
   buildingPlacement.x = x;
@@ -836,8 +875,8 @@ function updateBuildingPreview(event) {
     event.clientY >= rect.top && event.clientY <= rect.bottom
   );
   buildingPlacement.preview.style.display = buildingPlacement.valid ? "block" : "none";
-  buildingPlacement.preview.style.left = `${x}px`;
-  buildingPlacement.preview.style.top = `${y}px`;
+  buildingPlacement.preview.style.left = `${x - (isOutdoor ? camera.x : 0)}px`;
+  buildingPlacement.preview.style.top = `${y - (isOutdoor ? camera.y : 0)}px`;
 }
 
 function confirmBuildingPlacement() {
@@ -903,8 +942,11 @@ function update(deltaTime) {
   }
 
   const size = playerSize();
-  player.x = Math.max(0, Math.min(game.clientWidth - size.width, player.x));
-  player.y = Math.max(0, Math.min(game.clientHeight - size.height, player.y));
+  const movementBounds = currentScene === "outdoor"
+    ? outdoorWorldSize()
+    : { width: game.clientWidth, height: game.clientHeight };
+  player.x = Math.max(0, Math.min(movementBounds.width - size.width, player.x));
+  player.y = Math.max(0, Math.min(movementBounds.height - size.height, player.y));
 
   drawPlayer();
   renderPosition();
@@ -1091,8 +1133,9 @@ window.addEventListener("resize", () => {
     spawnPlayerInHouse();
   } else {
     const size = playerSize();
-    player.x = Math.max(0, Math.min(game.clientWidth - size.width, player.x));
-    player.y = Math.max(0, Math.min(game.clientHeight - size.height, player.y));
+    const world = outdoorWorldSize();
+    player.x = Math.max(0, Math.min(world.width - size.width, player.x));
+    player.y = Math.max(0, Math.min(world.height - size.height, player.y));
     if (positionTouchesBlockedTile(player.x, player.y)) {
       player.x = 0;
       player.y = 0;

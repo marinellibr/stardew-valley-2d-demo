@@ -35,7 +35,7 @@ As folhas recebidas foram organizadas em `assets/tilesets/`:
 - `farm-buildings.png`: construções da fazenda
 - `cabins.png`: variações de cabanas
 
-A grama curta foi extraída para `assets/tiles/terrain/short-grass.png` e é repetida no fundo em escala original 1×, acompanhando a escala do personagem.
+A grama curta foi extraída para `assets/tiles/terrain/short-grass.png` e é repetida no fundo em escala 2×, acompanhando a escala do personagem.
 
 O tileset `farm-buildings.png` também foi separado em 20 arquivos transparentes dentro de `assets/tiles/buildings/farm/`, incluindo celeiros, galinheiros, silo, poço, casas, estufa, moinho, obeliscos e estruturas decorativas. O arquivo `manifest.json` dessa pasta registra todas as coordenadas e dimensões de origem.
 
@@ -45,11 +45,13 @@ O projeto bloqueia rolagem, overscroll, zoom por pinça, duplo toque, roda do mo
 
 ## Grade de coordenadas
 
-A tela exibe uma grade de tiles de 16×16 px sobre o terreno. Cada tile possui contorno vermelho interno e mostra sua coordenada no formato `x,y`, começando por `0,0` no canto superior esquerdo.
+A tela exibe uma grade de tiles de 32×32 px sobre o terreno. Cada tile possui contorno vermelho interno e mostra sua coordenada no formato `x,y`, começando por `0,0` no canto superior esquerdo.
+
+Cada mapa externo possui limite fixo de **100×75 tiles** (3200×2400 px). A câmera acompanha o jogador e o mantém no centro da tela durante o movimento, respeitando as bordas do mundo.
 
 ## Construções posicionadas
 
-A primeira cabana do tileset `cabins.png` foi extraída para `assets/tiles/buildings/cabin-01.png`. Seu tile superior esquerdo está posicionado em `1,1`, equivalente a `left: 16px` e `top: 16px` na escala 1×.
+A primeira cabana do tileset `cabins.png` foi extraída para `assets/tiles/buildings/cabin-01.png`. Seu tile superior esquerdo está posicionado em `1,1`, equivalente a `left: 32px` e `top: 32px` na escala 2×.
 
 ### Colisão da cabana
 
@@ -57,7 +59,7 @@ Estão bloqueados os tiles `2,1`, `3,1`, `4,1` e todo o retângulo entre `1,2` e
 
 O tile `3,4` funciona como entrada: a cabeça do personagem nunca o ocupa. Ao tentar avançar por ele, o jogo muda para a rota `/house` e abre o cenário interno. A casa possui fundo externo preto, paredes sólidas, piso de madeira, móveis baseados nos novos tilesets e uma saída central inferior que retorna ao exterior.
 
-O interior também exibe uma grade vermelha de tiles de 16×16 px, com coordenadas locais `x,y` iniciando em `0,0` no canto superior esquerdo da casa.
+O interior também exibe uma grade vermelha de tiles de 32×32 px, com coordenadas locais `x,y` iniciando em `0,0` no canto superior esquerdo da casa.
 
 ## Controles móveis
 

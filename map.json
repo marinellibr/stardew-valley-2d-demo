@@ -6,15 +6,16 @@
       "id": "initial-scene",
       "name": "Cena inicial",
       "data": {
-        "version": 3,
-        "tileSize": 16,
+        "version": 4,
+        "tileSize": 32,
+        "dimensions": { "columns": 100, "rows": 75 },
         "maps": {
           "outdoor": {
             "defaultTile": { "sheet": "outdoors-spring", "x": 32, "y": 208 },
             "tiles": {},
             "blocked": [],
             "buildings": [
-              { "id": "default-cabin-01", "asset": "cabin-01", "x": 16, "y": 16 }
+              { "id": "default-cabin-01", "asset": "cabin-01", "x": 32, "y": 32 }
             ]
           },
           "house": {
