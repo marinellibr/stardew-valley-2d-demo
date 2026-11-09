@@ -1,0 +1,10 @@
+{
+  "frameRows": { "down": 0, "side": 1, "up": 2 },
+  "animals": [
+    { "id": "pig", "file": "pig.png", "sheet": [128, 160], "frame": 32 },
+    { "id": "horse", "file": "horse.png", "sheet": [224, 128], "frame": 32 },
+    { "id": "dog-grey", "file": "dog-grey.png", "sheet": [128, 288], "frame": 32 },
+    { "id": "cow-white", "file": "cow-white.png", "sheet": [128, 160], "frame": 32 },
+    { "id": "chicken-brown", "file": "chicken-brown.png", "sheet": [64, 112], "frame": 16 }
+  ]
+}

@@ -83,4 +83,10 @@ Os controles do editor ficam ocultos em telas de celular.
 
 ### Mapas salvos
 
-A aba **Mapas** mantém a cena existente como **Cena inicial** e permite criar novos mapas vazios. Cada mapa possui tiles, bloqueios e construções independentes, com troca instantânea e salvamento automático no `localStorage`.
+A aba **Mapas** mantém a cena existente como **Cena inicial**, permite criar novos mapas e excluir os que não forem mais necessários (o último mapa fica protegido). Cada mapa possui tiles, bloqueios, construções e animais independentes, com troca instantânea e salvamento automático no `localStorage`.
+
+Na aba **Tiles**, as ferramentas **Vazio** e **Restaurar** também funcionam como pincel. Vazio recorta o piso e transforma a área em limite sólido; Restaurar remove a edição daquele ponto e revela novamente o piso-base.
+
+### Animais
+
+A aba **Animais** oferece porco, cavalo, cachorro cinza, vaca branca e galinha marrom, separados em `assets/animals/`. Eles são posicionados com snap na grade, salvos por mapa e caminham em direções aleatórias. Ao encontrar uma parede, construção bloqueada ou limite do mapa, viram para o sentido oposto.

@@ -53,7 +53,8 @@ body {
 }
 
 .map-tile-layer,
-.placed-buildings-layer {
+.placed-buildings-layer,
+.animals-layer {
   position: absolute;
   inset: 0;
   align-content: start;
@@ -75,8 +76,30 @@ body {
   image-rendering: crisp-edges;
 }
 
+.map-tile-cell.is-empty {
+  background: #050505;
+}
+
 .placed-buildings-layer {
   z-index: 1;
+}
+
+.animals-layer {
+  z-index: 1;
+}
+
+.animal-canvas,
+.animal-preview {
+  position: absolute;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+}
+
+.animal-preview {
+  z-index: 12;
+  opacity: 0.62;
+  filter: drop-shadow(0 0 1px #fff);
 }
 
 .placed-building,
@@ -486,6 +509,65 @@ body.house-route .house-scene {
   gap: 7px;
 }
 
+.tile-tool-library {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-bottom: 10px;
+}
+
+.tile-tool-option {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 54px;
+  padding: 7px;
+  color: #f7dfad;
+  background: #39251c;
+  border: 2px solid #6e452c;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tile-tool-option.is-active {
+  background: #31522f;
+  border-color: #8ad76a;
+}
+
+.tile-tool-option > span:last-child {
+  display: grid;
+  gap: 2px;
+}
+
+.tile-tool-option strong {
+  font-size: 11px;
+}
+
+.tile-tool-option small {
+  color: #cba974;
+  font-size: 9px;
+}
+
+.tile-tool-swatch {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  background: #050505;
+  border: 1px solid #9a7657;
+  place-items: center;
+  color: #fff1bd;
+  font-size: 20px;
+  font-weight: 900;
+}
+
+.tile-tool-option--restore .tile-tool-swatch {
+  background-image: url("assets/tiles/terrain/short-grass.png");
+  background-size: 32px 32px;
+  image-rendering: pixelated;
+}
+
 .tileset-accordions details {
   background: #39251c;
   border: 1px solid #6e452c;
@@ -543,6 +625,40 @@ body.house-route .house-scene {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
+}
+
+.animal-library {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.animal-option {
+  display: grid;
+  min-height: 92px;
+  padding: 8px;
+  place-items: center;
+  gap: 5px;
+  color: #f7dfab;
+  background: #37271f;
+  border: 2px solid #694831;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.animal-option.is-active {
+  background: #31522f;
+  border-color: #8ad76a;
+}
+
+.animal-option canvas {
+  max-width: 64px;
+  max-height: 64px;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
 }
 
 .building-option {
@@ -655,7 +771,7 @@ body.house-route .house-scene {
 
 .map-card {
   display: grid;
-  grid-template-columns: 36px minmax(0, 1fr);
+  grid-template-columns: 36px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
   width: 100%;
@@ -666,6 +782,45 @@ body.house-route .house-scene {
   border-radius: 8px;
   text-align: left;
   cursor: pointer;
+}
+
+.map-card-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.map-card {
+  position: relative;
+}
+
+.map-card::before,
+.map-card-copy,
+.delete-map-button {
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.delete-map-button {
+  padding: 7px 8px;
+  color: #ffd7d2;
+  background: #742923;
+  border: 1px solid #d86b61;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 900;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.delete-map-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 
 .map-card::before {
@@ -941,6 +1096,7 @@ body.house-route .house-scene {
 
   .map-editor,
   .building-preview,
+  .animal-preview,
   .tile-brush-preview {
     display: none !important;
   }
