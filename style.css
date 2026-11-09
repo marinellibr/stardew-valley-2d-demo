@@ -514,6 +514,34 @@ body.house-route .house-scene {
   cursor: default;
 }
 
+.tile-paint-modes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-bottom: 10px;
+  padding: 4px;
+  background: #281a15;
+  border: 1px solid #60402e;
+  border-radius: 8px;
+}
+
+.tile-paint-mode {
+  padding: 8px;
+  color: #d8b982;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.tile-paint-mode.is-active {
+  color: #efffd9;
+  background: #31522f;
+  border-color: #8ad76a;
+}
+
 .editor-hint {
   margin: 10px 2px;
   color: #cfae78;

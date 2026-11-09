@@ -87,6 +87,8 @@ A aba **Mapas** mantém a cena existente como **Cena inicial**, permite criar no
 
 Na aba **Tiles**, as ferramentas **Vazio** e **Restaurar** também funcionam como pincel. Vazio recorta o piso e transforma a área em limite sólido; Restaurar remove a edição daquele ponto e revela novamente o piso-base.
 
+O editor de tiles possui os modos **Pincel**, para aplicar enquanto o cursor é arrastado, e **1 quadrado**, para alterar apenas um tile por clique.
+
 ### Furniture
 
 A folha `furniture.png` não aparece mais como tiles isolados. A aba **Furniture** exibe a folha inteira e permite arrastar uma seleção com snap de 16 px ao redor de qualquer objeto ou visão. Assim, vistas frontais e laterais são recortadas separadamente e cada seleção vira um móvel completo, posicionado com snap e salvo em uma camada própria acima do piso e das construções. Cada móvel pode ser removido sem alterar as camadas inferiores.

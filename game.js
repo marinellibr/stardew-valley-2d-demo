@@ -239,6 +239,7 @@ let animalPlacement = null;
 let furniturePlacement = null;
 let furnitureCropSelection = null;
 let buildingCropSelection = null;
+let tilePaintMode = "brush";
 let tileBrush = null;
 let suppressNextTileClick = false;
 let currentScene = "outdoor";
@@ -2017,6 +2018,16 @@ document.querySelectorAll(".editor-tab").forEach((tab) => {
 document.querySelector("#create-map").addEventListener("click", createMap);
 eraseTileTool.addEventListener("click", () => beginTileBrush({ empty: true }, eraseTileTool));
 restoreTileTool.addEventListener("click", () => beginTileBrush({ restore: true }, restoreTileTool));
+document.querySelectorAll(".tile-paint-mode").forEach((button) => {
+  button.addEventListener("click", () => {
+    tilePaintMode = button.dataset.tilePaintMode;
+    document.querySelectorAll(".tile-paint-mode").forEach((option) => {
+      const active = option === button;
+      option.classList.toggle("is-active", active);
+      option.setAttribute("aria-pressed", String(active));
+    });
+  });
+});
 
 buildingSourceSheet.addEventListener("pointerdown", (event) => {
   if (!editorEnabled()) return;
@@ -2117,10 +2128,10 @@ game.addEventListener(
     if (tileBrush) {
       updateTileBrushPreview(event);
       if (!tileBrush.position) return;
-      tileBrush.painting = true;
+      tileBrush.painting = tilePaintMode === "brush";
       tileBrush.lastKey = null;
       paintWithTileBrush();
-      game.setPointerCapture(event.pointerId);
+      if (tileBrush.painting) game.setPointerCapture(event.pointerId);
       suppressNextTileClick = true;
       event.preventDefault();
       event.stopPropagation();
