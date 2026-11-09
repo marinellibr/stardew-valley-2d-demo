@@ -82,6 +82,7 @@ body {
 .placed-building,
 .building-preview {
   position: absolute;
+  transform-origin: top left;
   image-rendering: pixelated;
   image-rendering: crisp-edges;
   pointer-events: none;
@@ -759,6 +760,47 @@ body.house-route .house-scene {
   grid-row: 3;
 }
 
+.action-controls {
+  display: grid;
+  gap: 18px;
+  touch-action: none;
+}
+
+.action-button {
+  display: grid;
+  width: 76px;
+  height: 76px;
+  padding: 14px;
+  place-items: center;
+  background: #294f2c;
+  border: 4px solid #98cc67;
+  border-radius: 50%;
+  box-shadow: inset 0 -7px 0 #18331b, 0 5px 0 #0c1b0e;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.action-button img {
+  width: 100%;
+  height: 100%;
+  filter: invert(93%) sepia(36%) saturate(631%) hue-rotate(330deg) brightness(106%);
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+.action-button--interact {
+  background: #724426;
+  border-color: #e2b86d;
+  box-shadow: inset 0 -7px 0 #422615, 0 5px 0 #1b0e09;
+}
+
+.action-button.is-pressed {
+  background: #a16b3e;
+  box-shadow: inset 0 -2px 0 #392014, 0 1px 0 #1b0e09;
+  transform: translateY(4px);
+}
+
 @media (max-width: 520px) {
   .outfit-picker {
     bottom: 14px;
@@ -791,25 +833,22 @@ body.house-route .house-scene {
   }
 
   .tile-coordinate {
+    color: transparent;
+    box-shadow: none;
     font-size: 3px;
+    text-shadow: none;
   }
 
   .tile-coordinate.is-selected {
-    box-shadow: inset 0 0 0 1px #28ff63;
+    box-shadow: none;
   }
 
   .tile-coordinate.is-blocked::after {
-    right: 1px;
-    bottom: 1px;
-    padding: 1px;
-    border-radius: 1px;
-    font-size: 5px;
+    display: none;
   }
 
   .tile-coordinate span {
-    top: 1px;
-    left: 1px;
-    padding: 1px;
+    display: none;
   }
 
   #player {
@@ -903,6 +942,8 @@ body.house-route .house-scene {
 
   .mobile-controls {
     display: grid;
+    grid-template-columns: auto auto;
+    gap: 28px;
     width: 100vw;
     height: 50dvh;
     place-items: center;
@@ -935,5 +976,19 @@ body.house-route .house-scene {
     height: 62px;
     border-radius: 14px;
     font-size: 24px;
+  }
+
+  .mobile-controls {
+    gap: 18px;
+  }
+
+  .action-controls {
+    gap: 14px;
+  }
+
+  .action-button {
+    width: 66px;
+    height: 66px;
+    padding: 12px;
   }
 }

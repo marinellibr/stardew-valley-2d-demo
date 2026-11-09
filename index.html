@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <title>Fazendeiro 2D — Protótipo</title>
-    <link rel="stylesheet" href="style.css?v=10" />
+    <link rel="stylesheet" href="style.css?v=12" />
   </head>
   <body>
     <main id="game" aria-label="Área do jogo">
@@ -101,8 +101,16 @@
         <button class="direction-button direction-button--right" type="button" data-code="ArrowRight" aria-label="Mover para a direita">▶</button>
         <button class="direction-button direction-button--down" type="button" data-code="ArrowDown" aria-label="Mover para baixo">▼</button>
       </div>
+      <div class="action-controls" aria-label="Ações do personagem">
+        <button id="run-button" class="action-button action-button--run" type="button" aria-label="Segure para correr" aria-pressed="false">
+          <img src="assets/ui/run.svg" alt="" draggable="false" />
+        </button>
+        <button id="interact-button" class="action-button action-button--interact" type="button" aria-label="Interagir">
+          <img src="assets/ui/interact.svg" alt="" draggable="false" />
+        </button>
+      </div>
     </nav>
 
-    <script src="game.js?v=10"></script>
+    <script src="game.js?v=12"></script>
   </body>
 </html>

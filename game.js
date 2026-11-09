@@ -197,6 +197,7 @@ const player = {
   frame: 0,
   animationTime: 0,
   outfit: "green",
+  running: false,
 };
 const camera = { x: 0, y: 0 };
 
@@ -404,8 +405,9 @@ function renderPlacedBuildings(scene) {
     image.alt = "";
     image.style.left = `${building.x}px`;
     image.style.top = `${building.y}px`;
-    image.style.width = `${asset.width * SHEET_SCALE}px`;
-    image.style.height = `${asset.height * SHEET_SCALE}px`;
+    image.style.width = `${asset.width}px`;
+    image.style.height = `${asset.height}px`;
+    image.style.transform = `scale(${SHEET_SCALE})`;
     fragment.append(image);
   }
   layer.append(fragment);
@@ -822,8 +824,9 @@ function beginBuildingPlacement(asset, button) {
   preview.className = "building-preview";
   preview.src = asset.file;
   preview.alt = "";
-  preview.style.width = `${asset.width * SHEET_SCALE}px`;
-  preview.style.height = `${asset.height * SHEET_SCALE}px`;
+  preview.style.width = `${asset.width}px`;
+  preview.style.height = `${asset.height}px`;
+  preview.style.transform = `scale(${SHEET_SCALE})`;
   const container = currentScene === "house" ? houseRoom : game;
   container.append(preview);
   button.classList.add("is-active");
@@ -902,8 +905,9 @@ function update(deltaTime) {
   player.moving = length > 0;
 
   if (player.moving) {
-    const movementX = (axis.x / length) * player.speed * deltaTime;
-    const movementY = (axis.y / length) * player.speed * deltaTime;
+    const movementSpeed = player.speed * (player.running ? 1.85 : 1);
+    const movementX = (axis.x / length) * movementSpeed * deltaTime;
+    const movementY = (axis.y / length) * movementSpeed * deltaTime;
     const nextX = player.x + movementX;
     const nextY = player.y + movementY;
 
@@ -962,6 +966,44 @@ function gameLoop(time) {
   requestAnimationFrame(gameLoop);
 }
 
+function setRunning(active) {
+  player.running = active;
+  const button = document.querySelector("#run-button");
+  button.classList.toggle("is-pressed", active);
+  button.setAttribute("aria-pressed", String(active));
+}
+
+function attemptInteraction() {
+  const hitbox = playerHitbox(player.x, player.y);
+  const centerX = (hitbox.left + hitbox.right) / 2;
+  const centerY = (hitbox.top + hitbox.bottom) / 2;
+
+  if (currentScene === "outdoor") {
+    const cabinExists = sceneMap("outdoor").buildings.some(
+      (building) => building.asset === "cabin-01" && building.x === TILE_SIZE && building.y === TILE_SIZE,
+    );
+    const doorCenterX = 3.5 * TILE_SIZE;
+    const doorCenterY = 5 * TILE_SIZE;
+    if (cabinExists && Math.hypot(centerX - doorCenterX, centerY - doorCenterY) <= TILE_SIZE * 2) {
+      showScene("house");
+      return;
+    }
+  } else {
+    const bounds = houseWalkableBounds();
+    if (
+      Math.abs(centerX - bounds.centerX) <= TILE_SIZE &&
+      Math.abs(hitbox.bottom - bounds.bottom) <= TILE_SIZE * 1.5
+    ) {
+      showScene("outdoor");
+      return;
+    }
+  }
+
+  game.dispatchEvent(new CustomEvent("game-interaction", {
+    detail: { scene: currentScene, x: player.x, y: player.y },
+  }));
+}
+
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && buildingPlacement) {
     event.preventDefault();
@@ -978,13 +1020,29 @@ window.addEventListener("keydown", (event) => {
     event.preventDefault();
     keys.add(event.code);
   }
+  if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
+    setRunning(true);
+  }
+  if (["KeyE", "Enter", "NumpadEnter"].includes(event.code) && !event.repeat) {
+    event.preventDefault();
+    attemptInteraction();
+  }
 });
 
 window.addEventListener("keyup", (event) => {
   keys.delete(event.code);
+  if (event.code === "ShiftLeft" || event.code === "ShiftRight") {
+    setRunning(false);
+  }
 });
 
-window.addEventListener("blur", () => keys.clear());
+window.addEventListener("blur", () => {
+  keys.clear();
+  setRunning(false);
+  document.querySelectorAll(".direction-button, .action-button").forEach((button) => {
+    button.classList.remove("is-pressed");
+  });
+});
 
 window.addEventListener(
   "wheel",
@@ -1057,6 +1115,37 @@ document.querySelectorAll(".direction-button").forEach((button) => {
   button.addEventListener("lostpointercapture", releaseDirection);
   button.addEventListener("contextmenu", (event) => event.preventDefault());
 });
+
+const runButton = document.querySelector("#run-button");
+const releaseRun = (event) => {
+  event.preventDefault();
+  setRunning(false);
+};
+runButton.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  setRunning(true);
+  runButton.setPointerCapture(event.pointerId);
+});
+runButton.addEventListener("pointerup", releaseRun);
+runButton.addEventListener("pointercancel", releaseRun);
+runButton.addEventListener("lostpointercapture", releaseRun);
+runButton.addEventListener("contextmenu", (event) => event.preventDefault());
+
+const interactButton = document.querySelector("#interact-button");
+const releaseInteraction = (event) => {
+  event.preventDefault();
+  interactButton.classList.remove("is-pressed");
+};
+interactButton.addEventListener("pointerdown", (event) => {
+  event.preventDefault();
+  interactButton.classList.add("is-pressed");
+  interactButton.setPointerCapture(event.pointerId);
+  attemptInteraction();
+});
+interactButton.addEventListener("pointerup", releaseInteraction);
+interactButton.addEventListener("pointercancel", releaseInteraction);
+interactButton.addEventListener("lostpointercapture", releaseInteraction);
+interactButton.addEventListener("contextmenu", (event) => event.preventDefault());
 
 [tileGrid, houseTileGrid].forEach((grid) => {
   grid.addEventListener("click", (event) => {

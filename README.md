@@ -65,6 +65,10 @@ O interior também exibe uma grade vermelha de tiles de 32×32 px, com coordenad
 
 Em telas com largura de até 768 px, a interface assume o modo celular e é dividida em duas metades. O jogo ocupa a parte superior e um direcional com quatro botões aparece sobre fundo preto na parte inferior. Os botões suportam pressão contínua e dois toques simultâneos para movimento diagonal.
 
+Ao lado do direcional há dois botões de ação: segure o ícone de corrida para aumentar a velocidade em 85% e toque no ícone da mão para interagir com entradas e saídas próximas. No teclado, os equivalentes são `Shift` para correr e `E`, `Enter/Return` ou `Numpad Enter` para interagir.
+
+No celular, a grade de edição fica visualmente oculta para não desenhar bordas sobre as construções. As imagens das construções permanecem na resolução nativa e usam apenas `transform: scale()` no desktop.
+
 ## Editor de mapas
 
 - Clique em um tile para selecioná-lo e trocar sua textura pelas bibliotecas disponíveis.
