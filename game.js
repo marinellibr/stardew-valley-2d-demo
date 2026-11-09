@@ -15,6 +15,7 @@ const toggleTileBlock = document.querySelector("#toggle-tile-block");
 const buildingLibrary = document.querySelector("#building-library");
 const placedBuildingList = document.querySelector("#placed-building-list");
 const placedBuildingsTitle = document.querySelector("#placed-buildings-title");
+const mapLibraryElement = document.querySelector("#map-library");
 
 context.imageSmoothingEnabled = false;
 spriteSheet.src = "assets/alex-sprites.png";
@@ -99,35 +100,59 @@ const DEFAULT_MAP = {
   },
 };
 
-function loadMapState() {
+function migrateSingleMap(parsed) {
+  if ((parsed.version ?? 1) < 2) {
+    const legacyCollision = new Set(LEGACY_CABIN_BLOCKED);
+    parsed.maps.outdoor.blocked = parsed.maps.outdoor.blocked.filter(
+      (tile) => !legacyCollision.has(tile),
+    );
+    if (!parsed.maps.outdoor.buildings.some((building) => building.id === "default-cabin-01")) {
+      parsed.maps.outdoor.buildings.unshift({
+        id: "default-cabin-01",
+        asset: "cabin-01",
+        x: 64,
+        y: 64,
+      });
+    }
+    parsed.version = 2;
+  }
+  return parsed;
+}
+
+function loadMapLibrary() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      if ((parsed.version ?? 1) < 2) {
-        const legacyCollision = new Set(LEGACY_CABIN_BLOCKED);
-        parsed.maps.outdoor.blocked = parsed.maps.outdoor.blocked.filter(
-          (tile) => !legacyCollision.has(tile),
-        );
-        if (!parsed.maps.outdoor.buildings.some((building) => building.id === "default-cabin-01")) {
-          parsed.maps.outdoor.buildings.unshift({
-            id: "default-cabin-01",
-            asset: "cabin-01",
-            x: 64,
-            y: 64,
-          });
-        }
-        parsed.version = 2;
+      if (parsed.version === 3 && Array.isArray(parsed.mapList)) {
+        parsed.mapList.forEach((entry) => migrateSingleMap(entry.data));
+        return parsed;
       }
-      return parsed;
+      return {
+        version: 3,
+        activeMapId: "initial-scene",
+        mapList: [{ id: "initial-scene", name: "Cena inicial", data: migrateSingleMap(parsed) }],
+      };
     }
   } catch (error) {
     console.warn("Não foi possível ler o mapa do localStorage.", error);
   }
-  return JSON.parse(JSON.stringify(DEFAULT_MAP));
+  return {
+    version: 3,
+    activeMapId: "initial-scene",
+    mapList: [{
+      id: "initial-scene",
+      name: "Cena inicial",
+      data: JSON.parse(JSON.stringify(DEFAULT_MAP)),
+    }],
+  };
 }
 
-let mapState = loadMapState();
+const mapLibrary = loadMapLibrary();
+const initialMapEntry = mapLibrary.mapList.find((entry) => entry.id === mapLibrary.activeMapId)
+  ?? mapLibrary.mapList[0];
+let activeMapId = initialMapEntry.id;
+let mapState = initialMapEntry.data;
 let selectedMapTile = null;
 let buildingPlacement = null;
 let suppressNextTileClick = false;
@@ -193,10 +218,76 @@ function editorEnabled() {
 
 function persistMap() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(mapState));
+    const activeEntry = mapLibrary.mapList.find((entry) => entry.id === activeMapId);
+    if (activeEntry) activeEntry.data = mapState;
+    mapLibrary.activeMapId = activeMapId;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mapLibrary));
   } catch (error) {
     console.warn("Não foi possível salvar o mapa no localStorage.", error);
   }
+}
+
+function emptyMapState() {
+  const empty = JSON.parse(JSON.stringify(DEFAULT_MAP));
+  empty.maps.outdoor.buildings = [];
+  empty.maps.outdoor.blocked = [];
+  empty.maps.house.buildings = [];
+  empty.maps.house.blocked = [];
+  return empty;
+}
+
+function renderMapLibrary() {
+  const fragment = document.createDocumentFragment();
+  mapLibrary.mapList.forEach((entry) => {
+    const button = document.createElement("button");
+    const copy = document.createElement("span");
+    const name = document.createElement("strong");
+    const summary = document.createElement("span");
+    const outdoor = entry.data.maps.outdoor;
+    const editedTileCount = Object.keys(outdoor.tiles).length;
+    const buildingCount = outdoor.buildings.length;
+
+    button.className = "map-card";
+    button.classList.toggle("is-active", entry.id === activeMapId);
+    button.type = "button";
+    copy.className = "map-card-copy";
+    name.textContent = entry.name;
+    summary.textContent = `${editedTileCount} tiles editados · ${buildingCount} construções`;
+    copy.append(name, summary);
+    button.append(copy);
+    button.addEventListener("click", () => activateMap(entry.id));
+    fragment.append(button);
+  });
+  mapLibraryElement.replaceChildren(fragment);
+}
+
+function activateMap(id) {
+  if (id === activeMapId) return;
+  persistMap();
+  const entry = mapLibrary.mapList.find((candidate) => candidate.id === id);
+  if (!entry) return;
+
+  activeMapId = id;
+  mapState = entry.data;
+  selectedMapTile = null;
+  buildTileGrid();
+  buildHouseTileGrid();
+  showScene("outdoor");
+  persistMap();
+  renderMapLibrary();
+  selectedTileLabel.textContent = entry.name;
+  mapEditor.classList.add("is-open");
+}
+
+function createMap() {
+  const number = mapLibrary.mapList.length + 1;
+  const entry = {
+    id: `map-${Date.now()}`,
+    name: `Mapa ${number}`,
+    data: emptyMapState(),
+  };
+  mapLibrary.mapList.push(entry);
+  activateMap(entry.id);
 }
 
 function sceneMap(scene = currentScene) {
@@ -954,8 +1045,11 @@ document.querySelectorAll(".editor-tab").forEach((tab) => {
       panel.classList.toggle("is-active", panel.dataset.editorPanel === target);
     });
     if (target === "buildings") renderPlacedBuildingList(currentScene);
+    if (target === "maps") renderMapLibrary();
   });
 });
+
+document.querySelector("#create-map").addEventListener("click", createMap);
 
 document.querySelectorAll("#tileset-accordions details").forEach((details) => {
   details.addEventListener("toggle", () => {
@@ -1009,6 +1103,7 @@ window.addEventListener("hashchange", () => {
 spriteSheet.addEventListener("load", () => {
   persistMap();
   renderBuildingLibrary();
+  renderMapLibrary();
   buildTileGrid();
   renderPlacedBuildings("outdoor");
   renderPlacedBuildings("house");

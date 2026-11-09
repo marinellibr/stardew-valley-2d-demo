@@ -73,3 +73,7 @@ Em telas com largura de até 768 px, a interface assume o modo celular e é divi
 - Toda alteração é salva automaticamente no `localStorage`, seguindo o formato de `map.json`.
 
 Os controles do editor ficam ocultos em telas de celular.
+
+### Mapas salvos
+
+A aba **Mapas** mantém a cena existente como **Cena inicial** e permite criar novos mapas vazios. Cada mapa possui tiles, bloqueios e construções independentes, com troca instantânea e salvamento automático no `localStorage`.

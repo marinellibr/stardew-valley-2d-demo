@@ -65,6 +65,7 @@
       <div class="editor-tabs" role="tablist" aria-label="Ferramentas do editor">
         <button class="editor-tab is-active" type="button" data-editor-tab="tiles" role="tab" aria-selected="true">Tiles</button>
         <button class="editor-tab" type="button" data-editor-tab="buildings" role="tab" aria-selected="false">Construções</button>
+        <button class="editor-tab" type="button" data-editor-tab="maps" role="tab" aria-selected="false">Mapas</button>
       </div>
 
       <section class="editor-panel is-active" data-editor-panel="tiles">
@@ -88,6 +89,12 @@
           <p class="editor-hint">As construções ficam em uma segunda camada. Removê-las preserva o tile que está por baixo.</p>
           <div id="placed-building-list" class="placed-building-list"></div>
         </div>
+      </section>
+
+      <section class="editor-panel" data-editor-panel="maps">
+        <p class="editor-hint">Cada mapa mantém seus próprios tiles, bloqueios e construções.</p>
+        <div id="map-library" class="map-library"></div>
+        <button id="create-map" class="create-map-button" type="button">+ Criar novo mapa</button>
       </section>
     </aside>
 

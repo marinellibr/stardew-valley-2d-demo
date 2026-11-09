@@ -672,6 +672,76 @@ body.house-route .house-scene {
   text-align: center;
 }
 
+.map-library {
+  display: grid;
+  gap: 8px;
+}
+
+.map-card {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  color: #f8dfad;
+  background: #35251e;
+  border: 2px solid #65432d;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.map-card::before {
+  content: "▦";
+  display: grid;
+  width: 34px;
+  height: 34px;
+  color: #f7d27c;
+  background: #203f24;
+  border: 2px solid #70a84e;
+  border-radius: 6px;
+  place-items: center;
+  font-size: 19px;
+}
+
+.map-card.is-active {
+  background: #29452a;
+  border-color: #8de270;
+  box-shadow: 0 0 0 2px rgb(141 226 112 / 22%);
+}
+
+.map-card-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.map-card-copy strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-card-copy span {
+  color: #c5a878;
+  font-size: 10px;
+}
+
+.create-map-button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 11px;
+  color: #1d2816;
+  background: #8fcb61;
+  border: 2px solid #d0f09b;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
 .mobile-controls {
   display: none;
 }
