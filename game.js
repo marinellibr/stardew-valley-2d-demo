@@ -27,7 +27,9 @@ const furnitureLibrary = document.querySelector("#furniture-library");
 const placedFurnitureList = document.querySelector("#placed-furniture-list");
 const placedFurnitureTitle = document.querySelector("#placed-furniture-title");
 const buildingSourceSheet = document.querySelector("#building-source-sheet");
-const buildingSourceSelection = document.querySelector("#building-source-selection");
+const buildingSourceCells = document.querySelector("#building-source-cells");
+const useBuildingSelection = document.querySelector("#use-building-selection");
+const clearBuildingSelection = document.querySelector("#clear-building-selection");
 const furnitureSourceSheet = document.querySelector("#furniture-source-sheet");
 const furnitureSourceSelection = document.querySelector("#furniture-source-selection");
 const eraseTileTool = document.querySelector("#erase-tile-tool");
@@ -238,7 +240,8 @@ let buildingPlacement = null;
 let animalPlacement = null;
 let furniturePlacement = null;
 let furnitureCropSelection = null;
-let buildingCropSelection = null;
+const buildingSelectedCells = new Set();
+let buildingCellGesture = null;
 let tilePaintMode = "brush";
 let tileBrush = null;
 let suppressNextTileClick = false;
@@ -519,6 +522,24 @@ function drawBuildingCrop(target, asset) {
   drawingContext.imageSmoothingEnabled = false;
   drawingContext.clearRect(0, 0, asset.width, asset.height);
   if (!buildingSheet.complete || !buildingSheet.naturalWidth) return;
+  if (asset.cells?.length) {
+    asset.cells.forEach((cell) => {
+      const cellWidth = Math.min(16, 919 - cell.x);
+      const cellHeight = Math.min(16, 412 - cell.y);
+      drawingContext.drawImage(
+        buildingSheet,
+        cell.x,
+        cell.y,
+        cellWidth,
+        cellHeight,
+        cell.x - asset.x,
+        cell.y - asset.y,
+        cellWidth,
+        cellHeight,
+      );
+    });
+    return;
+  }
   drawingContext.drawImage(
     buildingSheet,
     asset.x,
@@ -1329,42 +1350,66 @@ function buildingSourcePoint(event) {
   };
 }
 
-function updateBuildingSourceSelection(event) {
-  if (!buildingCropSelection) return;
-  const point = buildingSourcePoint(event);
-  const left = Math.min(buildingCropSelection.startX, point.x);
-  const top = Math.min(buildingCropSelection.startY, point.y);
-  const right = Math.min(919, Math.max(buildingCropSelection.startX, point.x) + 16);
-  const bottom = Math.min(412, Math.max(buildingCropSelection.startY, point.y) + 16);
-  buildingCropSelection = {
-    ...buildingCropSelection,
-    x: left,
-    y: top,
-    width: right - left,
-    height: bottom - top,
-  };
-  buildingSourceSelection.style.display = "block";
-  buildingSourceSelection.style.left = `${left}px`;
-  buildingSourceSelection.style.top = `${top}px`;
-  buildingSourceSelection.style.width = `${right - left}px`;
-  buildingSourceSelection.style.height = `${bottom - top}px`;
+function renderBuildingSourceCells() {
+  const fragment = document.createDocumentFragment();
+  buildingSelectedCells.forEach((key) => {
+    const [x, y] = key.split(",").map(Number);
+    const cell = document.createElement("span");
+    cell.className = "building-source-cell";
+    cell.style.left = `${x}px`;
+    cell.style.top = `${y}px`;
+    fragment.append(cell);
+  });
+  buildingSourceCells.replaceChildren(fragment);
+  const count = buildingSelectedCells.size;
+  useBuildingSelection.disabled = count === 0;
+  clearBuildingSelection.disabled = count === 0;
+  useBuildingSelection.textContent = `Usar seleção (${count})`;
 }
 
-function finishBuildingSourceSelection(event) {
-  if (!buildingCropSelection) return;
-  updateBuildingSourceSelection(event);
-  const { x, y, width, height } = buildingCropSelection;
-  buildingCropSelection = null;
-  buildingSourceSelection.style.display = "none";
+function applyBuildingCellGesture(event) {
+  if (!buildingCellGesture) return;
+  const point = buildingSourcePoint(event);
+  const key = `${point.x},${point.y}`;
+  if (buildingCellGesture.visited.has(key)) return;
+  buildingCellGesture.visited.add(key);
+  if (buildingCellGesture.mode === "add") buildingSelectedCells.add(key);
+  else buildingSelectedCells.delete(key);
+  renderBuildingSourceCells();
+}
+
+function finishBuildingCellGesture() {
+  buildingCellGesture = null;
+}
+
+function clearBuildingSourceCells() {
+  buildingSelectedCells.clear();
+  renderBuildingSourceCells();
+}
+
+function useSelectedBuildingCells() {
+  if (buildingSelectedCells.size === 0) return;
+  const cells = [...buildingSelectedCells].map((key) => {
+    const [x, y] = key.split(",").map(Number);
+    return { x, y };
+  });
+  const x = Math.min(...cells.map((cell) => cell.x));
+  const y = Math.min(...cells.map((cell) => cell.y));
+  const right = Math.min(919, Math.max(...cells.map((cell) => cell.x)) + 16);
+  const bottom = Math.min(412, Math.max(...cells.map((cell) => cell.y)) + 16);
+  const width = right - x;
+  const height = bottom - y;
   beginBuildingPlacement({
-    name: `building-${x}-${y}-${width}-${height}`,
-    label: `Recorte ${x},${y} · ${width}×${height}`,
+    name: `building-cells-${Date.now()}`,
+    label: `Construção personalizada · ${cells.length} quadrados`,
     x,
     y,
     width,
     height,
+    cells,
     custom: true,
   });
+  clearBuildingSourceCells();
 }
 
 function updateBuildingPreview(event) {
@@ -1407,6 +1452,7 @@ function confirmBuildingPlacement() {
       y: buildingPlacement.asset.y,
       width: buildingPlacement.asset.width,
       height: buildingPlacement.asset.height,
+      ...(buildingPlacement.asset.cells ? { cells: buildingPlacement.asset.cells } : {}),
     };
   }
   sceneMap(buildingPlacement.scene).buildings.push(building);
@@ -2033,28 +2079,18 @@ buildingSourceSheet.addEventListener("pointerdown", (event) => {
   if (!editorEnabled()) return;
   event.preventDefault();
   const point = buildingSourcePoint(event);
-  buildingCropSelection = { startX: point.x, startY: point.y, x: point.x, y: point.y, width: 16, height: 16 };
-  updateBuildingSourceSelection(event);
+  const key = `${point.x},${point.y}`;
+  buildingCellGesture = {
+    mode: buildingSelectedCells.has(key) ? "remove" : "add",
+    visited: new Set(),
+  };
+  applyBuildingCellGesture(event);
 });
-buildingSourceSheet.addEventListener("click", (event) => {
-  if (buildingPlacement || buildingCropSelection) return;
-  const { x, y } = buildingSourcePoint(event);
-  beginBuildingPlacement({
-    name: `building-${x}-${y}-16-16`,
-    label: `Recorte ${x},${y} · 16×16`,
-    x,
-    y,
-    width: 16,
-    height: 16,
-    custom: true,
-  });
-});
-document.addEventListener("pointermove", updateBuildingSourceSelection);
-document.addEventListener("pointerup", finishBuildingSourceSelection);
-document.addEventListener("pointercancel", () => {
-  buildingCropSelection = null;
-  buildingSourceSelection.style.display = "none";
-});
+document.addEventListener("pointermove", applyBuildingCellGesture);
+document.addEventListener("pointerup", finishBuildingCellGesture);
+document.addEventListener("pointercancel", finishBuildingCellGesture);
+useBuildingSelection.addEventListener("click", useSelectedBuildingCells);
+clearBuildingSelection.addEventListener("click", clearBuildingSourceCells);
 
 furnitureSourceSheet.addEventListener("pointerdown", (event) => {
   if (!editorEnabled()) return;

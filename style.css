@@ -756,6 +756,56 @@ body.house-route .house-scene {
   height: 412px;
 }
 
+.building-source-cells {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.building-source-cell {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: rgb(40 255 99 / 30%);
+  border: 2px solid #28ff63;
+  box-shadow: inset 0 0 0 1px rgb(0 27 8 / 70%);
+}
+
+.building-selection-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px;
+  margin: -4px 0 12px;
+}
+
+.use-building-selection,
+.clear-building-selection {
+  padding: 9px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.use-building-selection {
+  color: #183018;
+  background: #8fcb61;
+  border: 2px solid #d0f09b;
+}
+
+.clear-building-selection {
+  color: #ffd7d2;
+  background: #742923;
+  border: 1px solid #d86b61;
+}
+
+.use-building-selection:disabled,
+.clear-building-selection:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .furniture-source-sheet::after {
   position: absolute;
   inset: 0;

@@ -93,7 +93,7 @@ O editor de tiles possui os modos **Pincel**, para aplicar enquanto o cursor é 
 
 A folha `furniture.png` não aparece mais como tiles isolados. A aba **Furniture** exibe a folha inteira e permite arrastar uma seleção com snap de 16 px ao redor de qualquer objeto ou visão. Assim, vistas frontais e laterais são recortadas separadamente e cada seleção vira um móvel completo, posicionado com snap e salvo em uma camada própria acima do piso e das construções. Cada móvel pode ser removido sem alterar as camadas inferiores.
 
-A aba **Construções** também permite selecionar diretamente uma área completa de `farm-buildings.png`, com o mesmo recorte por arraste, snap e persistência. A grade mantém as bordas de edição, mas não exibe mais números dentro dos tiles.
+A aba **Construções** também permite selecionar diretamente células de `farm-buildings.png`. Um clique marca ou desmarca um quadrado de 16 px; mantendo pressionado e arrastando, várias células são adicionadas ou removidas. **Usar seleção** combina as células marcadas em uma única construção, mantendo transparentes as áreas não selecionadas. A grade mantém as bordas de edição, mas não exibe mais números dentro dos tiles.
 
 ### Animais
 
