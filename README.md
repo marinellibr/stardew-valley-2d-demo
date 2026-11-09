@@ -91,6 +91,8 @@ Na aba **Tiles**, as ferramentas **Vazio** e **Restaurar** também funcionam com
 
 A folha `furniture.png` não aparece mais como tiles isolados. A aba **Furniture** exibe a folha inteira e permite arrastar uma seleção com snap de 16 px ao redor de qualquer objeto ou visão. Assim, vistas frontais e laterais são recortadas separadamente e cada seleção vira um móvel completo, posicionado com snap e salvo em uma camada própria acima do piso e das construções. Cada móvel pode ser removido sem alterar as camadas inferiores.
 
+A aba **Construções** também permite selecionar diretamente uma área completa de `farm-buildings.png`, com o mesmo recorte por arraste, snap e persistência. A grade mantém as bordas de edição, mas não exibe mais números dentro dos tiles.
+
 ### Animais
 
 A aba **Animais** oferece porco, cavalo, cachorro cinza, vaca branca e galinha marrom, separados em `assets/animals/`. Eles são posicionados com snap na grade, salvos por mapa e caminham em direções aleatórias. Ao encontrar uma parede, construção bloqueada ou limite do mapa, viram para o sentido oposto.

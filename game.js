@@ -26,6 +26,8 @@ const placedAnimalsTitle = document.querySelector("#placed-animals-title");
 const furnitureLibrary = document.querySelector("#furniture-library");
 const placedFurnitureList = document.querySelector("#placed-furniture-list");
 const placedFurnitureTitle = document.querySelector("#placed-furniture-title");
+const buildingSourceSheet = document.querySelector("#building-source-sheet");
+const buildingSourceSelection = document.querySelector("#building-source-selection");
 const furnitureSourceSheet = document.querySelector("#furniture-source-sheet");
 const furnitureSourceSelection = document.querySelector("#furniture-source-selection");
 const eraseTileTool = document.querySelector("#erase-tile-tool");
@@ -109,6 +111,8 @@ const ANIMAL_ASSETS = [
 
 const furnitureSheet = new Image();
 furnitureSheet.src = "assets/tilesets/furniture.png";
+const buildingSheet = new Image();
+buildingSheet.src = "assets/tilesets/farm-buildings.png";
 
 // Cada entrada descreve o retângulo completo de um móvel, nunca um tile isolado.
 const FURNITURE_ASSETS = [
@@ -234,6 +238,7 @@ let buildingPlacement = null;
 let animalPlacement = null;
 let furniturePlacement = null;
 let furnitureCropSelection = null;
+let buildingCropSelection = null;
 let tileBrush = null;
 let suppressNextTileClick = false;
 let currentScene = "outdoor";
@@ -503,21 +508,62 @@ function refreshGridState(scene) {
   });
 }
 
+function buildingAssetForItem(building) {
+  return BUILDING_ASSETS.find((candidate) => candidate.name === building.asset)
+    ?? (building.source ? { ...building.source, name: building.asset, label: building.label ?? "Recorte da folha", custom: true } : null);
+}
+
+function drawBuildingCrop(target, asset) {
+  const drawingContext = target.getContext("2d");
+  drawingContext.imageSmoothingEnabled = false;
+  drawingContext.clearRect(0, 0, asset.width, asset.height);
+  if (!buildingSheet.complete || !buildingSheet.naturalWidth) return;
+  drawingContext.drawImage(
+    buildingSheet,
+    asset.x,
+    asset.y,
+    asset.width,
+    asset.height,
+    0,
+    0,
+    asset.width,
+    asset.height,
+  );
+}
+
+function makeBuildingElement(asset, className = "placed-building") {
+  if (!asset.custom) {
+    const image = document.createElement("img");
+    image.className = className;
+    image.src = asset.file;
+    image.alt = "";
+    image.style.width = `${asset.width}px`;
+    image.style.height = `${asset.height}px`;
+    return image;
+  }
+  const cropCanvas = document.createElement("canvas");
+  cropCanvas.className = className;
+  cropCanvas.width = asset.width;
+  cropCanvas.height = asset.height;
+  cropCanvas.style.width = `${asset.width}px`;
+  cropCanvas.style.height = `${asset.height}px`;
+  drawBuildingCrop(cropCanvas, asset);
+  if (!buildingSheet.complete) {
+    buildingSheet.addEventListener("load", () => drawBuildingCrop(cropCanvas, asset), { once: true });
+  }
+  return cropCanvas;
+}
+
 function renderPlacedBuildings(scene) {
   const layer = scene === "house" ? houseBuildingsLayer : outdoorBuildingsLayer;
   const fragment = document.createDocumentFragment();
   layer.replaceChildren();
   for (const building of sceneMap(scene).buildings) {
-    const asset = BUILDING_ASSETS.find((candidate) => candidate.name === building.asset);
+    const asset = buildingAssetForItem(building);
     if (!asset) continue;
-    const image = document.createElement("img");
-    image.className = "placed-building";
-    image.src = asset.file;
-    image.alt = "";
+    const image = makeBuildingElement(asset);
     image.style.left = `${building.x}px`;
     image.style.top = `${building.y}px`;
-    image.style.width = `${asset.width}px`;
-    image.style.height = `${asset.height}px`;
     image.style.transform = `scale(${SHEET_SCALE})`;
     fragment.append(image);
   }
@@ -550,21 +596,21 @@ function renderPlacedBuildingList(scene = currentScene) {
 
   const fragment = document.createDocumentFragment();
   buildings.forEach((building) => {
-    const asset = BUILDING_ASSETS.find((candidate) => candidate.name === building.asset);
+    const asset = buildingAssetForItem(building);
     if (!asset) return;
 
     const row = document.createElement("div");
-    const image = document.createElement("img");
+    const image = makeBuildingElement(asset, "");
     const info = document.createElement("div");
     const name = document.createElement("strong");
     const position = document.createElement("span");
     const removeButton = document.createElement("button");
 
     row.className = "placed-building-row";
-    image.src = asset.file;
-    image.alt = "";
+    image.style.position = "static";
+    image.style.transform = "none";
     info.className = "placed-building-info";
-    name.textContent = asset.name;
+    name.textContent = asset.label ?? asset.name;
     position.textContent = `tile ${building.x / TILE_SIZE},${building.y / TILE_SIZE}`;
     removeButton.className = "remove-building-button";
     removeButton.type = "button";
@@ -833,13 +879,10 @@ function buildTileGrid() {
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < columns; x += 1) {
       const tile = document.createElement("div");
-      const label = document.createElement("span");
       tile.className = "tile-coordinate";
       tile.dataset.scene = "outdoor";
       tile.dataset.x = String(x);
       tile.dataset.y = String(y);
-      label.textContent = `${x},${y}`;
-      tile.append(label);
       fragment.append(tile);
     }
   }
@@ -861,13 +904,10 @@ function buildHouseTileGrid() {
   for (let y = 0; y < rows; y += 1) {
     for (let x = 0; x < columns; x += 1) {
       const tile = document.createElement("div");
-      const label = document.createElement("span");
       tile.className = "tile-coordinate";
       tile.dataset.scene = "house";
       tile.dataset.x = String(x);
       tile.dataset.y = String(y);
-      label.textContent = `${x},${y}`;
-      tile.append(label);
       fragment.append(tile);
     }
   }
@@ -1245,16 +1285,11 @@ function beginBuildingPlacement(asset, button) {
   cancelAnimalPlacement();
   cancelFurniturePlacement();
   cancelTileBrush();
-  const preview = document.createElement("img");
-  preview.className = "building-preview";
-  preview.src = asset.file;
-  preview.alt = "";
-  preview.style.width = `${asset.width}px`;
-  preview.style.height = `${asset.height}px`;
+  const preview = makeBuildingElement(asset, "building-preview");
   preview.style.transform = `scale(${SHEET_SCALE})`;
   const container = currentScene === "house" ? houseRoom : game;
   container.append(preview);
-  button.classList.add("is-active");
+  button?.classList.add("is-active");
   buildingPlacement = {
     asset,
     preview,
@@ -1281,6 +1316,54 @@ function renderBuildingLibrary() {
     fragment.append(button);
   }
   buildingLibrary.replaceChildren(fragment);
+}
+
+function buildingSourcePoint(event) {
+  const rect = buildingSourceSheet.getBoundingClientRect();
+  const x = Math.max(0, Math.min(918, event.clientX - rect.left));
+  const y = Math.max(0, Math.min(411, event.clientY - rect.top));
+  return {
+    x: Math.floor(x / 16) * 16,
+    y: Math.floor(y / 16) * 16,
+  };
+}
+
+function updateBuildingSourceSelection(event) {
+  if (!buildingCropSelection) return;
+  const point = buildingSourcePoint(event);
+  const left = Math.min(buildingCropSelection.startX, point.x);
+  const top = Math.min(buildingCropSelection.startY, point.y);
+  const right = Math.min(919, Math.max(buildingCropSelection.startX, point.x) + 16);
+  const bottom = Math.min(412, Math.max(buildingCropSelection.startY, point.y) + 16);
+  buildingCropSelection = {
+    ...buildingCropSelection,
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top,
+  };
+  buildingSourceSelection.style.display = "block";
+  buildingSourceSelection.style.left = `${left}px`;
+  buildingSourceSelection.style.top = `${top}px`;
+  buildingSourceSelection.style.width = `${right - left}px`;
+  buildingSourceSelection.style.height = `${bottom - top}px`;
+}
+
+function finishBuildingSourceSelection(event) {
+  if (!buildingCropSelection) return;
+  updateBuildingSourceSelection(event);
+  const { x, y, width, height } = buildingCropSelection;
+  buildingCropSelection = null;
+  buildingSourceSelection.style.display = "none";
+  beginBuildingPlacement({
+    name: `building-${x}-${y}-${width}-${height}`,
+    label: `Recorte ${x},${y} · ${width}×${height}`,
+    x,
+    y,
+    width,
+    height,
+    custom: true,
+  });
 }
 
 function updateBuildingPreview(event) {
@@ -1310,12 +1393,22 @@ function updateBuildingPreview(event) {
 
 function confirmBuildingPlacement() {
   if (!buildingPlacement?.valid) return false;
-  sceneMap(buildingPlacement.scene).buildings.push({
+  const building = {
     id: `${buildingPlacement.asset.name}-${Date.now()}`,
     asset: buildingPlacement.asset.name,
     x: buildingPlacement.x,
     y: buildingPlacement.y,
-  });
+  };
+  if (buildingPlacement.asset.custom) {
+    building.label = buildingPlacement.asset.label;
+    building.source = {
+      x: buildingPlacement.asset.x,
+      y: buildingPlacement.asset.y,
+      width: buildingPlacement.asset.width,
+      height: buildingPlacement.asset.height,
+    };
+  }
+  sceneMap(buildingPlacement.scene).buildings.push(building);
   const scene = buildingPlacement.scene;
   persistMap();
   cancelBuildingPlacement();
@@ -1925,12 +2018,52 @@ document.querySelector("#create-map").addEventListener("click", createMap);
 eraseTileTool.addEventListener("click", () => beginTileBrush({ empty: true }, eraseTileTool));
 restoreTileTool.addEventListener("click", () => beginTileBrush({ restore: true }, restoreTileTool));
 
+buildingSourceSheet.addEventListener("pointerdown", (event) => {
+  if (!editorEnabled()) return;
+  event.preventDefault();
+  const point = buildingSourcePoint(event);
+  buildingCropSelection = { startX: point.x, startY: point.y, x: point.x, y: point.y, width: 16, height: 16 };
+  updateBuildingSourceSelection(event);
+});
+buildingSourceSheet.addEventListener("click", (event) => {
+  if (buildingPlacement || buildingCropSelection) return;
+  const { x, y } = buildingSourcePoint(event);
+  beginBuildingPlacement({
+    name: `building-${x}-${y}-16-16`,
+    label: `Recorte ${x},${y} · 16×16`,
+    x,
+    y,
+    width: 16,
+    height: 16,
+    custom: true,
+  });
+});
+document.addEventListener("pointermove", updateBuildingSourceSelection);
+document.addEventListener("pointerup", finishBuildingSourceSelection);
+document.addEventListener("pointercancel", () => {
+  buildingCropSelection = null;
+  buildingSourceSelection.style.display = "none";
+});
+
 furnitureSourceSheet.addEventListener("pointerdown", (event) => {
   if (!editorEnabled()) return;
   event.preventDefault();
   const point = furnitureSourcePoint(event);
   furnitureCropSelection = { startX: point.x, startY: point.y, x: point.x, y: point.y, width: 16, height: 16 };
   updateFurnitureSourceSelection(event);
+});
+furnitureSourceSheet.addEventListener("click", (event) => {
+  if (furniturePlacement || furnitureCropSelection) return;
+  const { x, y } = furnitureSourcePoint(event);
+  beginFurniturePlacement({
+    name: `furniture-${x}-${y}-16-16`,
+    label: `Recorte ${x},${y} · 16×16`,
+    x,
+    y,
+    width: 16,
+    height: 16,
+    custom: true,
+  });
 });
 document.addEventListener("pointermove", updateFurnitureSourceSelection);
 document.addEventListener("pointerup", finishFurnitureSourceSelection);

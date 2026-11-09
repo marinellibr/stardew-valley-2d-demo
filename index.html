@@ -7,7 +7,7 @@
       content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover"
     />
     <title>Fazendeiro 2D — Protótipo</title>
-    <link rel="stylesheet" href="style.css?v=20" />
+    <link rel="stylesheet" href="style.css?v=21" />
   </head>
   <body>
     <main id="game" aria-label="Área do jogo">
@@ -93,7 +93,14 @@
       </section>
 
       <section class="editor-panel" data-editor-panel="buildings">
-        <p class="editor-hint">Escolha uma construção, mova o cursor sobre o mapa e clique para posicionar. Esc cancela.</p>
+        <p class="editor-hint">Arraste ao redor de uma construção completa na folha ou use os recortes rápidos.</p>
+        <div class="furniture-sheet-picker building-sheet-picker">
+          <div id="building-source-sheet" class="furniture-source-sheet building-source-sheet">
+            <img src="assets/tilesets/farm-buildings.png" width="919" height="412" alt="Construções de farm-buildings.png" draggable="false" />
+            <span id="building-source-selection" class="furniture-source-selection" aria-hidden="true"></span>
+          </div>
+        </div>
+        <h3 class="furniture-presets-title">Recortes rápidos</h3>
         <div id="building-library" class="building-library"></div>
         <div class="placed-buildings-section">
           <h3 id="placed-buildings-title">Construções colocadas</h3>
@@ -152,6 +159,6 @@
       </div>
     </nav>
 
-    <script src="game.js?v=20"></script>
+    <script src="game.js?v=21"></script>
   </body>
 </html>

@@ -718,6 +718,16 @@ body.house-route .house-scene {
   -webkit-user-drag: none;
 }
 
+.building-sheet-picker {
+  max-height: 300px;
+}
+
+.building-source-sheet,
+.building-source-sheet img {
+  width: 919px;
+  height: 412px;
+}
+
 .furniture-source-sheet::after {
   position: absolute;
   inset: 0;
