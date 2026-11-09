@@ -821,7 +821,7 @@ body.house-route .house-scene {
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 768px), (orientation: landscape) and (max-height: 500px) {
   html,
   body {
     height: 100dvh;
@@ -829,13 +829,12 @@ body.house-route .house-scene {
   }
 
   body {
-    display: grid;
-    grid-template-rows: 50dvh 50dvh;
+    display: block;
   }
 
   #game {
     width: 100vw;
-    height: 50dvh;
+    height: 100dvh;
     background-size: 16px 16px;
   }
 
@@ -956,21 +955,38 @@ body.house-route .house-scene {
   }
 
   .mobile-controls {
-    display: grid;
-    grid-template-columns: auto auto;
-    gap: 28px;
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
     width: 100vw;
-    height: 50dvh;
-    place-items: center;
+    height: 100dvh;
+    padding: 18px max(18px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
     overflow: hidden;
-    background: #000;
+    background: transparent;
+    pointer-events: none;
     touch-action: none;
   }
 
+  .direction-pad,
+  .action-controls {
+    opacity: 0.58;
+    pointer-events: auto;
+    transition: opacity 100ms ease;
+  }
+
+  .direction-pad:active,
+  .action-controls:active {
+    opacity: 0.82;
+  }
+
   .outfit-picker {
-    bottom: 10px;
+    bottom: 14px;
     padding: 7px 11px 9px;
     gap: 5px;
+    opacity: 0.62;
   }
 
   .outfit-button {
@@ -993,10 +1009,6 @@ body.house-route .house-scene {
     font-size: 24px;
   }
 
-  .mobile-controls {
-    gap: 18px;
-  }
-
   .action-controls {
     gap: 14px;
   }
@@ -1005,5 +1017,42 @@ body.house-route .house-scene {
     width: 66px;
     height: 66px;
     padding: 12px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 500px) {
+  .mobile-controls {
+    align-items: center;
+    padding: max(10px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  }
+
+  .direction-pad {
+    grid-template-columns: repeat(3, 58px);
+    grid-template-rows: repeat(3, 58px);
+    gap: 6px;
+  }
+
+  .direction-button {
+    width: 58px;
+    height: 58px;
+    border-radius: 13px;
+    font-size: 22px;
+  }
+
+  .action-controls {
+    grid-template-columns: repeat(2, 60px);
+    gap: 12px;
+  }
+
+  .action-button {
+    width: 60px;
+    height: 60px;
+    padding: 11px;
+  }
+
+  .outfit-picker {
+    top: 10px;
+    bottom: auto;
+    padding: 5px 9px 7px;
   }
 }

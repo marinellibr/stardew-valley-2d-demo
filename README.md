@@ -63,7 +63,7 @@ O interior também exibe uma grade vermelha de tiles de 32×32 px, com coordenad
 
 ## Controles móveis
 
-Em telas com largura de até 768 px, a interface assume o modo celular e é dividida em duas metades. O jogo ocupa a parte superior e um direcional com quatro botões aparece sobre fundo preto na parte inferior. Os botões suportam pressão contínua e dois toques simultâneos para movimento diagonal.
+Em celulares, o mapa ocupa toda a tela e os controles aparecem de forma semitransparente sobre os tiles. O direcional fica no canto inferior esquerdo e as ações no canto inferior direito. Em paisagem, os controles ficam compactos e os botões de ação são alinhados horizontalmente. Os botões suportam pressão contínua e multitoque para correr enquanto o personagem se movimenta.
 
 Ao lado do direcional há dois botões de ação: segure o ícone de corrida para aumentar a velocidade em 85% e toque no ícone da mão para interagir com entradas e saídas próximas. No teclado, os equivalentes são `Shift` para correr e `E`, `Enter/Return` ou `Numpad Enter` para interagir.
 

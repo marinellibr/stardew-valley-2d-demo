@@ -23,7 +23,9 @@ spriteSheet.src = "assets/alex-sprites.png";
 const FRAME_WIDTH = 16;
 const FRAME_HEIGHT = 32;
 const FRAMES_PER_DIRECTION = 4;
-const MOBILE_GAME = window.matchMedia("(max-width: 768px)").matches;
+const MOBILE_GAME = window.matchMedia(
+  "(max-width: 768px), (orientation: landscape) and (max-height: 500px)",
+).matches;
 const TILE_SIZE = MOBILE_GAME ? 16 : 32;
 const STORAGE_KEY = "stardew-map-editor-v1";
 const SHEET_SCALE = MOBILE_GAME ? 1 : 2;
@@ -561,10 +563,12 @@ function renderPosition() {
 
   const size = playerSize();
   const world = outdoorWorldSize();
-  const maxCameraX = Math.max(0, world.width - game.clientWidth);
-  const maxCameraY = Math.max(0, world.height - game.clientHeight);
-  camera.x = Math.max(0, Math.min(maxCameraX, player.x + size.width / 2 - game.clientWidth / 2));
-  camera.y = Math.max(0, Math.min(maxCameraY, player.y + size.height / 2 - game.clientHeight / 2));
+  const cameraAxis = (worldSize, viewportSize, playerCenter) => {
+    if (worldSize <= viewportSize) return (worldSize - viewportSize) / 2;
+    return Math.max(0, Math.min(worldSize - viewportSize, playerCenter - viewportSize / 2));
+  };
+  camera.x = cameraAxis(world.width, game.clientWidth, player.x + size.width / 2);
+  camera.y = cameraAxis(world.height, game.clientHeight, player.y + size.height / 2);
 
   const worldTransform = `translate3d(${-camera.x}px, ${-camera.y}px, 0)`;
   outdoorMapLayer.style.transform = worldTransform;
