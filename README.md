@@ -69,6 +69,7 @@ Em telas com largura de até 768 px, a interface assume o modo celular e é divi
 - Use o botão de bloqueio para permitir ou impedir a passagem do jogador.
 - Na aba **Construções**, escolha um objeto e clique no mapa para posicioná-lo com encaixe na grade.
 - Construções ficam em uma segunda camada, independente do piso. O botão **Remover** apaga apenas a construção e revela o tile original que já estava embaixo.
+- A cabana inicial também pertence a essa camada: ela pode ser removida pelo editor, liberando suas colisões e desativando a entrada da casa.
 - Toda alteração é salva automaticamente no `localStorage`, seguindo o formato de `map.json`.
 
 Os controles do editor ficam ocultos em telas de celular.

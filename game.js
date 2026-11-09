@@ -37,7 +37,20 @@ const SHEETS = {
 };
 
 const BUILDING_ASSETS = [
-  { name: "cabin-01", file: "assets/tiles/buildings/cabin-01.png", width: 80, height: 112 },
+  {
+    name: "cabin-01",
+    file: "assets/tiles/buildings/cabin-01.png",
+    width: 80,
+    height: 112,
+    blockedTiles: [
+      [1, 0], [2, 0], [3, 0],
+      [0, 1], [1, 1], [2, 1], [3, 1], [4, 1],
+      [0, 2], [1, 2], [2, 2], [3, 2], [4, 2],
+      [0, 3], [1, 3], [2, 3], [3, 3], [4, 3],
+      [0, 4], [1, 4], [3, 4], [4, 4],
+      [0, 5], [1, 5], [3, 5], [4, 5],
+    ],
+  },
   { name: "barn-01", width: 112, height: 124 },
   { name: "barn-02", width: 112, height: 124 },
   { name: "barn-03", width: 116, height: 124 },
@@ -63,7 +76,7 @@ const BUILDING_ASSETS = [
   file: asset.file ?? `assets/tiles/buildings/farm/${asset.name}.png`,
 }));
 
-const DEFAULT_OUTDOOR_BLOCKED = [
+const LEGACY_CABIN_BLOCKED = [
   "2,1", "3,1", "4,1",
   "1,2", "2,2", "3,2", "4,2", "5,2",
   "1,3", "2,3", "3,3", "4,3", "5,3",
@@ -73,14 +86,14 @@ const DEFAULT_OUTDOOR_BLOCKED = [
 ];
 
 const DEFAULT_MAP = {
-  version: 1,
+  version: 2,
   tileSize: TILE_SIZE,
   maps: {
     outdoor: {
       defaultTile: { sheet: "outdoors-spring", x: 32, y: 208 },
       tiles: {},
-      blocked: DEFAULT_OUTDOOR_BLOCKED,
-      buildings: [],
+      blocked: [],
+      buildings: [{ id: "default-cabin-01", asset: "cabin-01", x: 64, y: 64 }],
     },
     house: { defaultTile: null, tiles: {}, blocked: [], buildings: [] },
   },
@@ -89,7 +102,25 @@ const DEFAULT_MAP = {
 function loadMapState() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if ((parsed.version ?? 1) < 2) {
+        const legacyCollision = new Set(LEGACY_CABIN_BLOCKED);
+        parsed.maps.outdoor.blocked = parsed.maps.outdoor.blocked.filter(
+          (tile) => !legacyCollision.has(tile),
+        );
+        if (!parsed.maps.outdoor.buildings.some((building) => building.id === "default-cabin-01")) {
+          parsed.maps.outdoor.buildings.unshift({
+            id: "default-cabin-01",
+            asset: "cabin-01",
+            x: 64,
+            y: 64,
+          });
+        }
+        parsed.version = 2;
+      }
+      return parsed;
+    }
   } catch (error) {
     console.warn("Não foi possível ler o mapa do localStorage.", error);
   }
@@ -173,7 +204,17 @@ function sceneMap(scene = currentScene) {
 }
 
 function isMapTileBlocked(scene, x, y) {
-  return sceneMap(scene).blocked.includes(`${x},${y}`);
+  if (sceneMap(scene).blocked.includes(`${x},${y}`)) return true;
+
+  return sceneMap(scene).buildings.some((building) => {
+    const asset = BUILDING_ASSETS.find((candidate) => candidate.name === building.asset);
+    if (!asset?.blockedTiles) return false;
+    const originX = building.x / TILE_SIZE;
+    const originY = building.y / TILE_SIZE;
+    return asset.blockedTiles.some(
+      ([offsetX, offsetY]) => originX + offsetX === x && originY + offsetY === y,
+    );
+  });
 }
 
 function applyTileStyle(element, tile) {
@@ -266,6 +307,7 @@ function removePlacedBuilding(scene, id) {
   buildings.splice(buildingIndex, 1);
   persistMap();
   renderPlacedBuildings(scene);
+  refreshGridState(scene);
 }
 
 function renderPlacedBuildingList(scene = currentScene) {
@@ -432,6 +474,11 @@ function positionTouchesBlockedTile(x, y) {
 }
 
 function headTouchesHouseDoor(x, y) {
+  const cabinExists = sceneMap("outdoor").buildings.some(
+    (building) => building.asset === "cabin-01" && building.x === TILE_SIZE && building.y === TILE_SIZE,
+  );
+  if (!cabinExists) return false;
+
   const size = playerSize();
   const head = {
     left: x + size.width * 0.125,
@@ -703,6 +750,7 @@ function confirmBuildingPlacement() {
   persistMap();
   cancelBuildingPlacement();
   renderPlacedBuildings(scene);
+  refreshGridState(scene);
   return true;
 }
 
