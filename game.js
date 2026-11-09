@@ -562,7 +562,7 @@ function drawAnimalFrame(target, asset, direction = "down", frame = 0) {
   const sourceX = (frame % asset.frames) * asset.frame;
   const sourceY = row * asset.frame;
   drawingContext.save();
-  if (direction === "right") {
+  if (direction === "left") {
     drawingContext.translate(asset.frame, 0);
     drawingContext.scale(-1, 1);
   }
