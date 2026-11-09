@@ -681,6 +681,72 @@ body.house-route .house-scene {
   text-align: center;
 }
 
+.furniture-sheet-picker {
+  max-height: 330px;
+  margin-bottom: 12px;
+  overflow: auto;
+  background:
+    linear-gradient(45deg, #292929 25%, transparent 25%),
+    linear-gradient(-45deg, #292929 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #292929 75%),
+    linear-gradient(-45deg, transparent 75%, #292929 75%),
+    #151515;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+  background-size: 16px 16px;
+  border: 2px solid #6e452c;
+  border-radius: 8px;
+}
+
+.furniture-source-sheet {
+  position: relative;
+  width: 980px;
+  height: 1488px;
+  line-height: 0;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.furniture-source-sheet img {
+  display: block;
+  width: 980px;
+  height: 1488px;
+  max-width: none;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.furniture-source-sheet::after {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgb(255 255 255 / 10%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 10%) 1px, transparent 1px);
+  background-size: 16px 16px;
+  content: "";
+  pointer-events: none;
+}
+
+.furniture-source-selection {
+  position: absolute;
+  z-index: 2;
+  display: none;
+  min-width: 16px;
+  min-height: 16px;
+  background: rgb(40 255 99 / 18%);
+  border: 3px solid #28ff63;
+  box-shadow: 0 0 0 1px #001b08;
+  pointer-events: none;
+}
+
+.furniture-presets-title {
+  margin: 0 0 8px;
+  color: #ffe8b8;
+  font-size: 12px;
+}
+
 .animal-library {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

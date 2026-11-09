@@ -26,6 +26,8 @@ const placedAnimalsTitle = document.querySelector("#placed-animals-title");
 const furnitureLibrary = document.querySelector("#furniture-library");
 const placedFurnitureList = document.querySelector("#placed-furniture-list");
 const placedFurnitureTitle = document.querySelector("#placed-furniture-title");
+const furnitureSourceSheet = document.querySelector("#furniture-source-sheet");
+const furnitureSourceSelection = document.querySelector("#furniture-source-selection");
 const eraseTileTool = document.querySelector("#erase-tile-tool");
 const restoreTileTool = document.querySelector("#restore-tile-tool");
 
@@ -231,6 +233,7 @@ let selectedMapTile = null;
 let buildingPlacement = null;
 let animalPlacement = null;
 let furniturePlacement = null;
+let furnitureCropSelection = null;
 let tileBrush = null;
 let suppressNextTileClick = false;
 let currentScene = "outdoor";
@@ -611,12 +614,17 @@ function makeFurnitureCanvas(asset, className = "furniture-canvas") {
   return itemCanvas;
 }
 
+function furnitureAssetForItem(item) {
+  return FURNITURE_ASSETS.find((candidate) => candidate.name === item.asset)
+    ?? (item.source ? { ...item.source, name: item.asset, label: item.label ?? "Recorte da folha" } : null);
+}
+
 function renderPlacedFurniture(scene) {
   const layer = scene === "house" ? houseFurnitureLayer : outdoorFurnitureLayer;
   const fragment = document.createDocumentFragment();
   layer.replaceChildren();
   sceneMap(scene).furniture.forEach((item) => {
-    const asset = FURNITURE_ASSETS.find((candidate) => candidate.name === item.asset);
+    const asset = furnitureAssetForItem(item);
     if (!asset) return;
     const itemCanvas = makeFurnitureCanvas(asset);
     itemCanvas.style.left = `${item.x}px`;
@@ -649,7 +657,7 @@ function renderPlacedFurnitureList(scene = currentScene) {
 
   const fragment = document.createDocumentFragment();
   items.forEach((item) => {
-    const asset = FURNITURE_ASSETS.find((candidate) => candidate.name === item.asset);
+    const asset = furnitureAssetForItem(item);
     if (!asset) return;
     const row = document.createElement("div");
     const thumbnail = makeFurnitureCanvas(asset);
@@ -1332,7 +1340,7 @@ function beginFurniturePlacement(asset, button) {
   const preview = makeFurnitureCanvas(asset, "furniture-preview");
   const container = currentScene === "house" ? houseRoom : game;
   container.append(preview);
-  button.classList.add("is-active");
+  button?.classList.add("is-active");
   furniturePlacement = { asset, preview, scene: currentScene, x: 0, y: 0, valid: false };
 }
 
@@ -1355,6 +1363,55 @@ function renderFurnitureLibrary() {
     fragment.append(button);
   });
   furnitureLibrary.replaceChildren(fragment);
+}
+
+function furnitureSourcePoint(event) {
+  const rect = furnitureSourceSheet.getBoundingClientRect();
+  const x = Math.max(0, Math.min(979, event.clientX - rect.left));
+  const y = Math.max(0, Math.min(1487, event.clientY - rect.top));
+  return {
+    x: Math.floor(x / 16) * 16,
+    y: Math.floor(y / 16) * 16,
+  };
+}
+
+function updateFurnitureSourceSelection(event) {
+  if (!furnitureCropSelection) return;
+  const point = furnitureSourcePoint(event);
+  const left = Math.min(furnitureCropSelection.startX, point.x);
+  const top = Math.min(furnitureCropSelection.startY, point.y);
+  const right = Math.min(980, Math.max(furnitureCropSelection.startX, point.x) + 16);
+  const bottom = Math.min(1488, Math.max(furnitureCropSelection.startY, point.y) + 16);
+  furnitureCropSelection = {
+    ...furnitureCropSelection,
+    x: left,
+    y: top,
+    width: right - left,
+    height: bottom - top,
+  };
+  furnitureSourceSelection.style.display = "block";
+  furnitureSourceSelection.style.left = `${left}px`;
+  furnitureSourceSelection.style.top = `${top}px`;
+  furnitureSourceSelection.style.width = `${right - left}px`;
+  furnitureSourceSelection.style.height = `${bottom - top}px`;
+}
+
+function finishFurnitureSourceSelection(event) {
+  if (!furnitureCropSelection) return;
+  updateFurnitureSourceSelection(event);
+  const { x, y, width, height } = furnitureCropSelection;
+  furnitureCropSelection = null;
+  furnitureSourceSelection.style.display = "none";
+  const asset = {
+    name: `furniture-${x}-${y}-${width}-${height}`,
+    label: `Recorte ${x},${y} · ${width}×${height}`,
+    x,
+    y,
+    width,
+    height,
+    custom: true,
+  };
+  beginFurniturePlacement(asset);
 }
 
 function updateFurniturePreview(event) {
@@ -1385,12 +1442,22 @@ function updateFurniturePreview(event) {
 function confirmFurniturePlacement() {
   if (!furniturePlacement?.valid) return false;
   const scene = furniturePlacement.scene;
-  sceneMap(scene).furniture.push({
+  const item = {
     id: `${furniturePlacement.asset.name}-${Date.now()}`,
     asset: furniturePlacement.asset.name,
     x: furniturePlacement.x,
     y: furniturePlacement.y,
-  });
+  };
+  if (furniturePlacement.asset.custom) {
+    item.label = furniturePlacement.asset.label;
+    item.source = {
+      x: furniturePlacement.asset.x,
+      y: furniturePlacement.asset.y,
+      width: furniturePlacement.asset.width,
+      height: furniturePlacement.asset.height,
+    };
+  }
+  sceneMap(scene).furniture.push(item);
   persistMap();
   cancelFurniturePlacement();
   renderPlacedFurniture(scene);
@@ -1857,6 +1924,20 @@ document.querySelectorAll(".editor-tab").forEach((tab) => {
 document.querySelector("#create-map").addEventListener("click", createMap);
 eraseTileTool.addEventListener("click", () => beginTileBrush({ empty: true }, eraseTileTool));
 restoreTileTool.addEventListener("click", () => beginTileBrush({ restore: true }, restoreTileTool));
+
+furnitureSourceSheet.addEventListener("pointerdown", (event) => {
+  if (!editorEnabled()) return;
+  event.preventDefault();
+  const point = furnitureSourcePoint(event);
+  furnitureCropSelection = { startX: point.x, startY: point.y, x: point.x, y: point.y, width: 16, height: 16 };
+  updateFurnitureSourceSelection(event);
+});
+document.addEventListener("pointermove", updateFurnitureSourceSelection);
+document.addEventListener("pointerup", finishFurnitureSourceSelection);
+document.addEventListener("pointercancel", () => {
+  furnitureCropSelection = null;
+  furnitureSourceSelection.style.display = "none";
+});
 
 document.querySelectorAll("#tileset-accordions details").forEach((details) => {
   details.addEventListener("toggle", () => {
