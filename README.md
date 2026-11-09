@@ -95,6 +95,8 @@ A folha `furniture.png` não aparece mais como tiles isolados. A aba **Furniture
 
 A aba **Construções** também permite selecionar diretamente células de `farm-buildings.png`. Um clique marca ou desmarca um quadrado de 16 px; mantendo pressionado e arrastando, várias células são adicionadas ou removidas. **Usar seleção** combina as células marcadas em uma única construção, mantendo transparentes as áreas não selecionadas. A grade mantém as bordas de edição, mas não exibe mais números dentro dos tiles.
 
+Os recortes rápidos de construções usam uma moldura lógica alinhada a 16 px. As margens transparentes originais são preservadas para que portas, bases e paredes encaixem corretamente na grade, inclusive nos sprites cujas dimensões visíveis não são múltiplas de 16.
+
 ### Animais
 
 A aba **Animais** oferece porco, cavalo, cachorro cinza, vaca branca e galinha marrom, separados em `assets/animals/`. Eles são posicionados com snap na grade, salvos por mapa e caminham em direções aleatórias. Ao encontrar uma parede, construção bloqueada ou limite do mapa, viram para o sentido oposto.

@@ -51,6 +51,50 @@ const PICKER_SCALE = 2;
 const DEFAULT_MAP_COLUMNS = 65;
 const DEFAULT_MAP_ROWS = 30;
 
+const FARM_BUILDING_RECTS = {
+  "barn-01": { x: 0, y: 0, width: 112, height: 124 },
+  "barn-02": { x: 128, y: 0, width: 112, height: 124 },
+  "barn-03": { x: 256, y: 0, width: 116, height: 124 },
+  silo: { x: 384, y: 0, width: 64, height: 128 },
+  well: { x: 448, y: 16, width: 64, height: 96 },
+  "special-building": { x: 600, y: 0, width: 184, height: 148 },
+  "obelisk-01": { x: 800, y: 0, width: 56, height: 148 },
+  "obelisk-02": { x: 864, y: 0, width: 55, height: 148 },
+  "coop-01": { x: 0, y: 124, width: 116, height: 132 },
+  "coop-02": { x: 128, y: 124, width: 116, height: 132 },
+  "coop-03": { x: 256, y: 124, width: 116, height: 132 },
+  shed: { x: 376, y: 128, width: 72, height: 112 },
+  "construction-frame": { x: 480, y: 96, width: 120, height: 144 },
+  "tree-huts": { x: 600, y: 160, width: 192, height: 80 },
+  "farmhouse-01": { x: 0, y: 264, width: 148, height: 148 },
+  "farmhouse-02": { x: 152, y: 264, width: 152, height: 148 },
+  "farmhouse-03": { x: 304, y: 264, width: 156, height: 148 },
+  greenhouse: { x: 480, y: 240, width: 120, height: 172 },
+  windmill: { x: 600, y: 240, width: 232, height: 172 },
+  clock: { x: 840, y: 152, width: 56, height: 88 },
+};
+
+function alignBuildingAsset(asset, rect) {
+  if (!rect) return asset;
+  const x = Math.floor(rect.x / 16) * 16;
+  const y = Math.floor(rect.y / 16) * 16;
+  const right = Math.ceil((rect.x + rect.width) / 16) * 16;
+  const bottom = Math.ceil((rect.y + rect.height) / 16) * 16;
+  return {
+    ...asset,
+    x,
+    y,
+    width: right - x,
+    height: bottom - y,
+    visibleWidth: rect.width,
+    visibleHeight: rect.height,
+    trimOffsetX: rect.x - x,
+    trimOffsetY: rect.y - y,
+    alignedFile: true,
+    custom: true,
+  };
+}
+
 const SHEETS = {
   "outdoors-spring": { file: "assets/tilesets/outdoors-spring.png", width: 656, height: 1664 },
   flooring: { file: "assets/tilesets/flooring.png", width: 512, height: 256 },
@@ -94,10 +138,10 @@ const BUILDING_ASSETS = [
   { name: "greenhouse", width: 120, height: 172 },
   { name: "windmill", width: 232, height: 172 },
   { name: "clock", width: 56, height: 88 },
-].map((asset) => ({
-  ...asset,
-  file: asset.file ?? `assets/tiles/buildings/farm/${asset.name}.png`,
-}));
+].map((asset) => alignBuildingAsset(
+  { ...asset, file: asset.file ?? `assets/tiles/buildings/farm/${asset.name}.png` },
+  FARM_BUILDING_RECTS[asset.name],
+));
 
 const ANIMAL_ASSETS = [
   { name: "pig", label: "Porco", file: "assets/animals/pig.png", width: 128, height: 160, frame: 32, frames: 4 },
@@ -521,6 +565,23 @@ function drawBuildingCrop(target, asset) {
   const drawingContext = target.getContext("2d");
   drawingContext.imageSmoothingEnabled = false;
   drawingContext.clearRect(0, 0, asset.width, asset.height);
+  if (asset.alignedFile) {
+    asset.image ??= new Image();
+    const drawAlignedFile = () => {
+      drawingContext.clearRect(0, 0, asset.width, asset.height);
+      drawingContext.drawImage(
+        asset.image,
+        asset.trimOffsetX,
+        asset.trimOffsetY,
+        asset.visibleWidth,
+        asset.visibleHeight,
+      );
+    };
+    if (asset.image.complete && asset.image.naturalWidth) drawAlignedFile();
+    else asset.image.addEventListener("load", drawAlignedFile, { once: true });
+    if (!asset.image.src) asset.image.src = asset.file;
+    return;
+  }
   if (!buildingSheet.complete || !buildingSheet.naturalWidth) return;
   if (asset.cells?.length) {
     asset.cells.forEach((cell) => {
@@ -1408,6 +1469,7 @@ function useSelectedBuildingCells() {
     height,
     cells,
     custom: true,
+    userCrop: true,
   });
   clearBuildingSourceCells();
 }
@@ -1445,7 +1507,7 @@ function confirmBuildingPlacement() {
     x: buildingPlacement.x,
     y: buildingPlacement.y,
   };
-  if (buildingPlacement.asset.custom) {
+  if (buildingPlacement.asset.userCrop) {
     building.label = buildingPlacement.asset.label;
     building.source = {
       x: buildingPlacement.asset.x,
